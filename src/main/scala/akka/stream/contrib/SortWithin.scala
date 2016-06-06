@@ -3,9 +3,10 @@
  */
 package akka.stream.contrib
 
-import akka.stream.Attributes
-import akka.stream.impl.fusing.GraphStages.SimpleLinearGraphStage
-import akka.stream.stage.{GraphStageLogic, InHandler, OutHandler, TimerGraphStageLogic}
+import akka.NotUsed
+import akka.stream.scaladsl.Flow
+import akka.stream.stage._
+import akka.stream.{javadsl, _}
 
 import scala.collection.immutable.VectorBuilder
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -27,7 +28,7 @@ object SortWithin {
     * @tparam A input type
     * @return [[SortWithin]] instance.
     */
-  def apply[A <: Comparable[A]](finiteDuration: FiniteDuration): SortWithin[A] = new SortWithin[A](finiteDuration)
+  def apply[A <: Comparable[A]](finiteDuration: FiniteDuration): Flow[A, A, NotUsed] = Flow.fromGraph(new SortWithin[A](finiteDuration))
 
   /**
     * Java API: Sorts elements received within given duration and emits them at the end of each duration.
@@ -44,11 +45,15 @@ object SortWithin {
     * @tparam A input type
     * @return [[SortWithin]] instance.
     */
-  def create[A <: Comparable[A]](finiteDuration: FiniteDuration): SortWithin[A] = new SortWithin[A](finiteDuration)
+  def create[A <: Comparable[A]](finiteDuration: FiniteDuration): javadsl.Flow[A, A, NotUsed] = javadsl.Flow.fromGraph(new SortWithin[A](finiteDuration))
 }
 
-final class SortWithin[T <: Comparable[T]](timeout: FiniteDuration) extends SimpleLinearGraphStage[T] {
-  require(timeout > Duration.Zero)
+final class SortWithin[T <: Comparable[T]](timeout: FiniteDuration) extends GraphStage[FlowShape[T, T]] {
+  require(timeout > Duration.Zero, "Duration must be > 0")
+
+  val in = Inlet[T]("SortWithin.in")
+  val out = Outlet[T]("SortWithin.out")
+  override val shape = FlowShape(in, out)
 
   private val buf: VectorBuilder[T] = new VectorBuilder
 
