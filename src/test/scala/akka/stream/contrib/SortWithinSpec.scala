@@ -5,7 +5,7 @@ package akka.stream.contrib
 
 import java.util.concurrent.TimeUnit
 
-import akka.stream.DelayOverflowStrategy
+import akka.stream.{Attributes, DelayOverflowStrategy}
 import akka.stream.scaladsl.{Keep, Source}
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 
@@ -53,6 +53,7 @@ trait SortWithinSpec extends BaseStreamSpec {
     "sort elements for every finite duration" in {
       val duration: FiniteDuration = FiniteDuration.apply(1, TimeUnit.SECONDS)
       Source((1 to 10).reverse).map(Integer.valueOf).delay(duration, DelayOverflowStrategy.backpressure)
+        .withAttributes(Attributes.inputBuffer(1, 1))
         .via(SortWithin[Integer](FiniteDuration.apply(5, TimeUnit.SECONDS)))
         .runWith(TestSink.probe[Integer])
         .request(10)
