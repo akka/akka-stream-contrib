@@ -53,6 +53,8 @@ final class SortWithin[T <: Comparable[T]](timeout: FiniteDuration) extends Grap
 
   val in = Inlet[T]("SortWithin.in")
   val out = Outlet[T]("SortWithin.out")
+  private case object SortWithinTimer
+
   override val shape = FlowShape(in, out)
 
   private val buf: VectorBuilder[T] = new VectorBuilder
@@ -88,7 +90,7 @@ final class SortWithin[T <: Comparable[T]](timeout: FiniteDuration) extends Grap
     }
 
     override def preStart(): Unit = {
-      schedulePeriodically("SortWithinTimer", timeout)
+      schedulePeriodically(SortWithinTimer, timeout)
       pull(in)
     }
   }
