@@ -50,16 +50,16 @@ trait SortWithinSpec extends BaseStreamSpec {
 
     "sort elements for every finite duration" in {
 
-      Source((1 to 10).reverse).map(Integer.valueOf).delay(200.millis, DelayOverflowStrategy.backpressure)
+      Source((1 to 10).reverse).map(Integer.valueOf).delay(700.millis, DelayOverflowStrategy.backpressure)
         .withAttributes(Attributes.inputBuffer(1, 1))
-        .via(SortWithin[Integer](900.millis))
+        .via(SortWithin[Integer](3400.millis))
         .runWith(TestSink.probe[Integer])
         .request(10)
-        .expectNoMsg(800.millis)
+        .expectNoMsg(3300.millis)
         .expectNext(7, 8, 9, 10)
-        .expectNoMsg(800.millis)
-        .expectNext(3, 4, 5, 6)
-        .expectNext(1, 2)
+        .expectNoMsg(3300.millis)
+        .expectNext(2, 3, 4, 5, 6)
+        .expectNext(1)
         .expectComplete()
     }
   }
