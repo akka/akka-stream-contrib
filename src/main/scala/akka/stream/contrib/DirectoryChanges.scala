@@ -25,6 +25,19 @@ object DirectoryChanges {
   case object Deleted extends Change
 
   /**
+   * Java API
+   */
+  val modified = Modified
+  /**
+   * Java API
+   */
+  val created = Created
+  /**
+   * Java API
+   */
+  val deleted = Deleted
+
+  /**
    * Scala API
    *
    * Watches a file system directory and streams change events from it.
@@ -77,11 +90,8 @@ final class DirectoryChanges(directoryPath: Path, pollInterval: FiniteDuration, 
   override def shape: SourceShape[(Path, Change)] = SourceShape.of(out)
 
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new TimerGraphStageLogic(shape) {
-    {
-      val file = directoryPath.toFile
-      assert(file.exists(), s"The path: $directoryPath does not exist")
-      assert(file.isDirectory, s"The path $directoryPath is not a directory")
-    }
+    assert(Files.exists(directoryPath), s"The path: $directoryPath does not exist")
+    assert(Files.isDirectory(directoryPath), s"The path $directoryPath is not a directory")
 
     private var buffer = Queue.empty[(Path, Change)]
     private val service: WatchService = directoryPath.getFileSystem.newWatchService()
