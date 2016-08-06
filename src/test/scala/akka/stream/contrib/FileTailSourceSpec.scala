@@ -37,8 +37,8 @@ class FileTailSourceSpec extends BaseStreamSpec {
       println("Running, ENTER to stop")
       StdIn.readLine()
 
-    } */
-
+    }
+*/
   }
 
 }

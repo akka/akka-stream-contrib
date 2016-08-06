@@ -4,16 +4,32 @@
 package akka.stream.contrib
 
 import java.nio.ByteBuffer
-import java.nio.channels.{AsynchronousFileChannel, CompletionHandler}
-import java.nio.file.{Files, Path, StandardOpenOption}
+import java.nio.channels.{ AsynchronousFileChannel, CompletionHandler }
+import java.nio.file.{ Files, Path, StandardOpenOption }
 
 import akka.NotUsed
 import akka.stream.stage._
-import akka.stream.{Attributes, Outlet, SourceShape}
+import akka.stream.{ Attributes, Outlet, SourceShape }
 import akka.util.ByteString
 
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
+
+object FileTailSource {
+
+  /**
+   * INTERNAL API
+   *
+   * Single reusable completion handler instance
+   */
+  private object TailCompletionHandler extends CompletionHandler[Integer, AsyncCallback[Try[Integer]]] {
+    override def completed(result: Integer, attachment: AsyncCallback[Try[Integer]]): Unit =
+      attachment.invoke(Success(result))
+    override def failed(ex: Throwable, attachment: AsyncCallback[Try[Integer]]): Unit =
+      attachment.invoke(Failure(ex))
+  }
+
+}
 
 /**
  * Read the entire contents of a file, and then when the end is reached, keep reading
@@ -27,6 +43,8 @@ import scala.util.{Failure, Success, Try}
  * @param pollingInterval When the end has been reached, look for new content with this interval
  */
 final class FileTailSource(path: Path, maxChunkSize: Int, startingPosition: Long, pollingInterval: FiniteDuration) extends GraphStage[SourceShape[ByteString]] {
+  import FileTailSource.TailCompletionHandler
+
   val out = Outlet[ByteString]("FileTailSource.out")
   override val shape: SourceShape[ByteString] = SourceShape(out)
 
@@ -38,10 +56,10 @@ final class FileTailSource(path: Path, maxChunkSize: Int, startingPosition: Long
       val buffer = ByteBuffer.allocate(maxChunkSize)
       val channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ)
       var position = startingPosition
-      var chunkHandler: CompletionHandler[Integer, NotUsed] = _
+      var chunkCallback: AsyncCallback[Try[Integer]] = _
 
       override def preStart(): Unit = {
-        val chunkCallback = getAsyncCallback[Try[Integer]] {
+        chunkCallback = getAsyncCallback[Try[Integer]] {
           case Success(readBytes) =>
             if (readBytes > 0) {
               buffer.flip()
@@ -56,15 +74,6 @@ final class FileTailSource(path: Path, maxChunkSize: Int, startingPosition: Long
           case Failure(ex) =>
             failStage(ex)
         }
-
-        chunkHandler = new CompletionHandler[Integer, NotUsed] {
-          override def completed(result: Integer, attachment: NotUsed): Unit = {
-            chunkCallback.invoke(Success(result))
-          }
-          override def failed(ex: Throwable, attachment: NotUsed): Unit = {
-            chunkCallback.invoke(Failure(ex))
-          }
-        }
       }
 
       override protected def onTimer(timerKey: Any): Unit = {
@@ -72,7 +81,7 @@ final class FileTailSource(path: Path, maxChunkSize: Int, startingPosition: Long
       }
 
       override def onPull(): Unit = {
-        channel.read(buffer, position, NotUsed, chunkHandler)
+        channel.read(buffer, position, chunkCallback, TailCompletionHandler)
       }
 
       override def postStop(): Unit = {
