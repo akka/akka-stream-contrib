@@ -4,18 +4,16 @@
 package akka.stream.contrib
 
 import java.nio.ByteBuffer
-import java.nio.channels.{ AsynchronousFileChannel, CompletionHandler }
-import java.nio.file.{ Files, OpenOption, Path, StandardOpenOption }
+import java.nio.channels.{AsynchronousFileChannel, CompletionHandler}
+import java.nio.file.{Files, Path, StandardOpenOption}
 
-import akka.{ Done, NotUsed }
-import akka.actor.Cancellable
-import akka.stream.{ Attributes, Outlet, SourceShape }
+import akka.NotUsed
 import akka.stream.stage._
+import akka.stream.{Attributes, Outlet, SourceShape}
 import akka.util.ByteString
 
-import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 /**
  * Read the entire contents of a file, and then when the end is reached, keep reading
