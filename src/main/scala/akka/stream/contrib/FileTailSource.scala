@@ -37,12 +37,10 @@ final class FileTailSource(path: Path, maxChunkSize: Int, startingPosition: Long
       assert(Files.isReadable(path), s"path $path is not readable")
       implicit def ec = materializer.executionContext
 
-      var position = startingPosition
-      var buffer = ByteBuffer.allocate(maxChunkSize)
-
-      var chunkHandler: CompletionHandler[Integer, NotUsed] = _
-
+      val buffer = ByteBuffer.allocate(maxChunkSize)
       val channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ)
+      var position = startingPosition
+      var chunkHandler: CompletionHandler[Integer, NotUsed] = _
 
       override def preStart(): Unit = {
         val chunkCallback = getAsyncCallback[Try[Integer]] {
