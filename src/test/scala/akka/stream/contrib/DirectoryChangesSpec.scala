@@ -16,6 +16,7 @@ import akka.testkit.TestKit
 import com.google.common.jimfs.{ Configuration, Jimfs, WatchServiceConfiguration }
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{ BeforeAndAfterAll, Matchers, WordSpec }
+import scala.concurrent.duration._
 
 class DirectoryChangesSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
@@ -39,7 +40,7 @@ class DirectoryChangesSpec extends WordSpec with Matchers with BeforeAndAfterAll
 
     "emit on directory changes" in {
       val probe = TestSubscriber.probe[(Path, DirectoryChanges.Change)]()
-      DirectoryChanges(testDir).runWith(Sink.fromSubscriber(probe))
+      DirectoryChanges.apply(testDir, 250.millis, 200).runWith(Sink.fromSubscriber(probe))
 
       probe.request(1)
       // race here, since we don't know if the request reaches the stage before
@@ -49,21 +50,21 @@ class DirectoryChangesSpec extends WordSpec with Matchers with BeforeAndAfterAll
       val createdFile = Files.createFile(testDir.resolve("test1file1.sample"))
 
       val (path1, change1) = probe.expectNext()
-      change1 shouldEqual DirectoryChanges.Created
+      change1 shouldEqual DirectoryChanges.Change.Creation
       path1 shouldEqual createdFile
 
       Files.write(path1, "Some data".getBytes())
 
       probe.request(1)
       val (path2, change2) = probe.expectNext()
-      change2 shouldEqual DirectoryChanges.Modified
+      change2 shouldEqual DirectoryChanges.Change.Modification
       path2 shouldEqual createdFile
 
       Files.delete(path2)
 
       probe.request(1)
       val (path3, change3) = probe.expectNext()
-      change3 shouldEqual DirectoryChanges.Deleted
+      change3 shouldEqual DirectoryChanges.Change.Deletion
       path3 shouldEqual createdFile
 
       probe.cancel()
@@ -72,7 +73,7 @@ class DirectoryChangesSpec extends WordSpec with Matchers with BeforeAndAfterAll
     "emit on a bunch of changes" in {
       val probe = TestSubscriber.probe[(Path, DirectoryChanges.Change)]()
       val numberOfChanges = 50
-      DirectoryChanges(testDir, maxBufferSize = 50 * 2).runWith(Sink.fromSubscriber(probe))
+      DirectoryChanges.apply(testDir, 250.millis, 50 * 2).runWith(Sink.fromSubscriber(probe))
 
       probe.request(numberOfChanges.toLong)
       // race here, since we don't know if the request reaches the stage before
