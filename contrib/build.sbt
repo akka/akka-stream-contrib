@@ -1,0 +1,1 @@
+name := "akka-stream-contrib"
