@@ -16,9 +16,9 @@ class TimedSpecAutoFusingOff extends { val autoFusing = false } with TimedSpec
 
 trait TimedSpec extends BaseStreamSpec {
 
-  import akka.stream.contrib.Implicits.TimedFlowDsl
-
   "Timed Source" should {
+
+    import akka.stream.contrib.Implicits.TimedSourceDsl
 
     "measure time it between elements matching a predicate" in {
       val testActor = TestProbe()
@@ -31,12 +31,12 @@ trait TimedSpec extends BaseStreamSpec {
         info(s"Measured interval between $measureBetweenEvery elements was: $interval")
       }
 
-      val flow = Flow[Int].map(identity).timedIntervalBetween(_ % measureBetweenEvery == 0, printInfo)
+      val source = Source(1 to n).timedIntervalBetween(_ % measureBetweenEvery == 0, printInfo)
 
-      val (source, sink) = Source(1 to n)
-        .via(flow)
-        .toMat(TestSink.probe)(Keep.both)
-        .run()
+      source.runWith(Sink.ignore)
+      (1 until n / measureBetweenEvery) foreach { _ =>
+        testActor.expectMsgType[FiniteDuration]
+      }
     }
 
     "measure time it takes from start to complete, by wrapping operations" in {
@@ -48,17 +48,15 @@ trait TimedSpec extends BaseStreamSpec {
         info(s"Processing $n elements took $d")
       }
 
-      val flow = Flow[Int].timed(_.map(identity), onComplete = printInfo)
-
-      val (source, sink) = Source(1 to n)
-        .via(flow)
-        .toMat(TestSink.probe)(Keep.both)
-        .run()
+      Source(1 to n).timed(_.map(identity), onComplete = printInfo).runWith(Sink.ignore)
+      testActor.expectMsgType[FiniteDuration]
     }
 
   }
 
   "Timed Flow" should {
+
+    import akka.stream.contrib.Implicits.TimedFlowDsl
 
     "measure time it between elements matching a predicate" in {
       val probe = TestProbe()
