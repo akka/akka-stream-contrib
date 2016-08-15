@@ -18,16 +18,17 @@ import scala.Tuple2;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.nio.file.*;
-import static java.nio.file.StandardWatchEventKinds.*;
 import java.util.ArrayDeque;
 import java.util.Queue;
+
+import static java.nio.file.StandardWatchEventKinds.*;
 
 /**
  * Watches a file system directory and streams change events from it.
  *
  * Note that the JDK watcher is notoriously slow on some platform (up to 1s after event actually happened on OSX for example)
  */
-public class DirectoryChanges extends GraphStage<SourceShape<Pair<Path, DirectoryChanges.Change>>> {
+public final class DirectoryChanges extends GraphStage<SourceShape<Pair<Path, DirectoryChanges.Change>>> {
 
   public enum Change {
     Modification,
@@ -35,7 +36,7 @@ public class DirectoryChanges extends GraphStage<SourceShape<Pair<Path, Director
     Deletion
   }
 
-  private final static Attributes defaultAttributes = Attributes.name("DirectoryChanges");
+  private final static Attributes DEFAULT_ATTRIBUTES = Attributes.name("DirectoryChanges");
 
   private final Path directoryPath;
   private final FiniteDuration pollInterval;
@@ -62,13 +63,13 @@ public class DirectoryChanges extends GraphStage<SourceShape<Pair<Path, Director
 
   @Override
   public Attributes initialAttributes() {
-    return defaultAttributes;
+    return DEFAULT_ATTRIBUTES;
   }
 
   @Override
   public GraphStageLogic createLogic(Attributes inheritedAttributes) {
-    if(!Files.exists(directoryPath)) throw new IllegalArgumentException("The path: '" + directoryPath + "' does not exist");
-    if(!Files.isDirectory(directoryPath)) throw new IllegalArgumentException("The path '" + directoryPath + "' is not a directory");
+    if (!Files.exists(directoryPath)) throw new IllegalArgumentException("The path: '" + directoryPath + "' does not exist");
+    if (!Files.isDirectory(directoryPath)) throw new IllegalArgumentException("The path '" + directoryPath + "' is not a directory");
 
     try {
       return new TimerGraphStageLogic(shape) {
@@ -140,6 +141,8 @@ public class DirectoryChanges extends GraphStage<SourceShape<Pair<Path, Director
               final WatchEvent.Kind<?> kind = event.kind();
 
               if (OVERFLOW.equals(kind)) {
+                // overflow means that some file system change events may have been missed,
+                // that may be ok for some scenarios but to make sure it does not pass unnoticed we fail the stage
                 failStage(new RuntimeException("Overflow from watch service: '" + directoryPath + "'"));
 
               } else {
@@ -199,15 +202,30 @@ public class DirectoryChanges extends GraphStage<SourceShape<Pair<Path, Director
 
   // factory methods
 
+  /**
+   * Java API
+   *
+   * @param directoryPath Directory to watch
+   * @param pollInterval Interval between polls to the JDK watch service when a push comes in and there was no changes, if
+   *                     the JDK implementation is slow, it will not help lowering this
+   * @param maxBufferSize Maximum number of buffered directory changes before the stage fails
+   */
   public static Source<Pair<Path, Change>, NotUsed> create(Path directoryPath, FiniteDuration pollInterval, int maxBufferSize) {
     return Source.fromGraph(new DirectoryChanges(directoryPath, pollInterval, maxBufferSize));
   }
 
+  /**
+   * Scala API
+   *
+   * @param directoryPath Directory to watch
+   * @param pollInterval Interval between polls to the JDK watch service when a push comes in and there was no changes, if
+   *                     the JDK implementation is slow, it will not help lowering this
+   * @param maxBufferSize Maximum number of buffered directory changes before the stage fails
+   */
   public static akka.stream.scaladsl.Source<Tuple2<Path, Change>, NotUsed> apply(Path directoryPath, FiniteDuration pollInterval, int maxBufferSize) {
     return create(directoryPath, pollInterval, maxBufferSize)
       .map((Pair<Path, Change> pair) -> Tuple2.apply(pair.first(), pair.second()))
       .asScala();
   }
-
-
+  
 }
