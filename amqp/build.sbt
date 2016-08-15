@@ -1,3 +1,7 @@
+lazy val amqp = (project in file(".")).
+  configs(IntegrationTest)
+  .enablePlugins(AutomateHeaderPlugin)
+
 name := "akka-stream-contrib-amqp"
 
 libraryDependencies ++= Seq(

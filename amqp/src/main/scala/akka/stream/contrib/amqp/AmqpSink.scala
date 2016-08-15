@@ -48,6 +48,9 @@ final class AmqpSink(settings: AmqpSinkSettings) extends GraphStage[SinkShape[Ou
 
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) with AmqpConnectorLogic {
     override val settings = stage.settings
+    private val exchange = settings.exchange.getOrElse("")
+    private val routingKey = settings.routingKey.getOrElse("")
+
     override def connectionFactoryFrom(settings: AmqpConnectionSettings) = stage.connectionFactoryFrom(settings)
 
     override def whenConnected(): Unit = {
@@ -66,8 +69,8 @@ final class AmqpSink(settings: AmqpSinkSettings) extends GraphStage[SinkShape[Ou
       override def onPush(): Unit = {
         val elem = grab(in)
         channel.basicPublish(
-          settings.exchange.getOrElse(""),
-          settings.routingKey.getOrElse(""),
+          exchange,
+          routingKey,
           elem.mandatory,
           elem.immediate,
           elem.props.orNull,

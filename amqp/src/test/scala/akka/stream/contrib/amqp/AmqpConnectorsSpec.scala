@@ -8,8 +8,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.Done
 import akka.stream.javadsl.SinkQueueWithCancel
 import akka.stream._
-import akka.stream.scaladsl.{Flow, GraphDSL, Keep, Merge, Sink, Source}
-import akka.stream.testkit.{TestPublisher, TestSubscriber}
+import akka.stream.scaladsl.{ Flow, GraphDSL, Keep, Merge, Sink, Source }
+import akka.stream.testkit.{ TestPublisher, TestSubscriber }
 import akka.util.ByteString
 import akka.testkit.TestKit.awaitCond
 
@@ -33,14 +33,18 @@ class AmqpConnectorsSpec extends AmqpSpec {
         NamedQueueSourceSettings(
           DefaultAmqpConnection,
           queueName,
-          List(queueDeclaration)), bufferSize = 10)
+          List(queueDeclaration)
+        ), bufferSize = 10
+      )
 
       val amqpSink = AmqpSink.simple(
         AmqpSinkSettings(
           DefaultAmqpConnection,
           None,
           Some(queueName),
-          List(queueDeclaration)))
+          List(queueDeclaration)
+        )
+      )
 
       val input = Vector("one", "two", "three", "four", "five")
       Source(input).map(s => ByteString(s)).runWith(amqpSink)
@@ -58,14 +62,18 @@ class AmqpConnectorsSpec extends AmqpSpec {
         NamedQueueSourceSettings(
           DefaultAmqpConnection,
           queueName,
-          List(queueDeclaration)), bufferSize = 10)
+          List(queueDeclaration)
+        ), bufferSize = 10
+      )
 
       val amqpSink = AmqpSink.simple(
         AmqpSinkSettings(
           DefaultAmqpConnection,
           exchange = None,
           routingKey = Some(queueName),
-          List(queueDeclaration)))
+          List(queueDeclaration)
+        )
+      )
 
       val input = Vector("one", "two", "three", "four", "five")
       Source(input).map(s => ByteString(s)).runWith(amqpSink)
@@ -84,7 +92,9 @@ class AmqpConnectorsSpec extends AmqpSpec {
           DefaultAmqpConnection,
           exchange = None,
           routingKey = Some(queueName),
-          List(queueDeclaration)))
+          List(queueDeclaration)
+        )
+      )
 
       val input = Vector("one", "two", "three", "four", "five")
       Source(input).map(s => ByteString(s)).runWith(amqpSink)
@@ -97,7 +107,8 @@ class AmqpConnectorsSpec extends AmqpSpec {
           val source = b.add(AmqpSource(NamedQueueSourceSettings(
             DefaultAmqpConnection,
             queueName,
-            List(queueDeclaration)), bufferSize = 1))
+            List(queueDeclaration)
+          ), bufferSize = 1))
           source.out ~> merge.in(n)
         }
 
@@ -117,14 +128,18 @@ class AmqpConnectorsSpec extends AmqpSpec {
         NamedQueueSourceSettings(
           DefaultAmqpConnection,
           queueName,
-          List(queueDeclaration)), bufferSize = 2)
+          List(queueDeclaration)
+        ), bufferSize = 2
+      )
 
       val amqpSink = AmqpSink.simple(
         AmqpSinkSettings(
           DefaultAmqpConnection,
           exchange = None,
           routingKey = Some(queueName),
-          List(queueDeclaration)))
+          List(queueDeclaration)
+        )
+      )
 
       val publisher = TestPublisher.probe[ByteString]()
       val subscriber = TestSubscriber.probe[IncomingMessage]()
@@ -172,14 +187,18 @@ class AmqpConnectorsSpec extends AmqpSpec {
         NamedQueueSourceSettings(
           DefaultAmqpConnection,
           queueName,
-          List(queueDeclaration)), bufferSize = 10)
+          List(queueDeclaration)
+        ), bufferSize = 10
+      )
 
       val amqpSink = AmqpSink.simple(
         AmqpSinkSettings(
           DefaultAmqpConnection,
           exchange = None,
           routingKey = Some(queueName),
-          List(queueDeclaration)))
+          List(queueDeclaration)
+        )
+      )
 
       val publisher = TestPublisher.probe[ByteString]()
       val subscriber = TestSubscriber.probe[IncomingMessage]()
@@ -227,7 +246,6 @@ class AmqpConnectorsSpec extends AmqpSpec {
 
     }
 
-
     "pub-sub from one source with multiple sinks" in {
       // with pubsub we arrange one exchange which the sink writes to
       // and then one queue for each source which subscribes to the
@@ -242,7 +260,9 @@ class AmqpConnectorsSpec extends AmqpSpec {
           DefaultAmqpConnection,
           Some(exchangeName),
           None,
-          List(exchangeDeclaration)))
+          List(exchangeDeclaration)
+        )
+      )
 
       val count = 4
       val mergedSources = Source.fromGraph(GraphDSL.create() { implicit b =>
@@ -258,7 +278,8 @@ class AmqpConnectorsSpec extends AmqpSpec {
               exchangeName,
               List(exchangeDeclaration)
             ),
-            bufferSize = 1).map(msg => (msg, n)))
+            bufferSize = 1
+          ).map(msg => (msg, n)))
           source.out ~> merge.in(n)
         }
 
@@ -280,7 +301,6 @@ class AmqpConnectorsSpec extends AmqpSpec {
 
       val input = Vector("one", "two", "three", "four", "five")
       Source(input).map(s => ByteString(s)).runWith(amqpSink)
-
 
       val expectedOutput = input.flatMap(string => (0 until 4).map(n => (n, string))).toSet
       futureResult.futureValue.toSet shouldEqual expectedOutput
