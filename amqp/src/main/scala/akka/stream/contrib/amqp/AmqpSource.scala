@@ -128,17 +128,6 @@ final class AmqpSource(settings: AmqpSourceSettings, bufferSize: Int) extends Gr
         }
       }
 
-      override def onDownstreamFinish(): Unit = {
-        // nack any buffered messages to broker if possible
-        if (channel.isOpen) {
-          queue.headOption.foreach(message =>
-            channel.basicNack(
-              message.envelope.getDeliveryTag,
-              true, // multiple - nack every outstanding up to this
-              true)) // requeue - make the messages available for delivery again
-        }
-      }
-
     })
 
     def pushAndAckMessage(message: IncomingMessage): Unit = {
