@@ -46,7 +46,7 @@ final class AmqpSource(settings: AmqpSourceSettings, bufferSize: Int) extends Gr
   override protected def initialAttributes: Attributes =
     Attributes.name("AmqpSource").and(ActorAttributes.dispatcher("akka.stream.default-blocking-io-dispatcher"))
 
-  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new TimerGraphStageLogic(shape) with AmqpConnectorLogic {
+  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) with AmqpConnectorLogic {
 
     override val settings = stage.settings
     override def connectionFactoryFrom(settings: AmqpConnectionSettings) = stage.connectionFactoryFrom(settings)
