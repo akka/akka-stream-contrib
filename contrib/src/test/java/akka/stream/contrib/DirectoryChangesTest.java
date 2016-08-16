@@ -63,10 +63,6 @@ public class DirectoryChangesTest {
 
     probe.request(1);
 
-    // race here, since we don't know if the request reaches the stage before
-    // we create the file
-    Thread.sleep(250);
-
     final Path createdFile = Files.createFile(testDir.resolve("test1file1.sample"));
 
     final Pair<Path, DirectoryChanges.Change> pair1 = probe.expectNext();
@@ -104,12 +100,7 @@ public class DirectoryChangesTest {
       numberOfChanges * 2
     ).runWith(Sink.fromSubscriber(probe), materializer);
 
-
     probe.request(numberOfChanges);
-
-    // race here, since we don't know if the request reaches the stage before
-    // we create the file
-    Thread.sleep(100);
 
     final int halfRequested = numberOfChanges / 2;
     final List<Path> files = new ArrayList<>();
