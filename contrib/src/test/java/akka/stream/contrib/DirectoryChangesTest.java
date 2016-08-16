@@ -71,15 +71,13 @@ public class DirectoryChangesTest {
 
     Files.write(createdFile, "Some data".getBytes());
 
-    probe.request(1);
-    final Pair<Path, DirectoryChanges.Change> pair2 = probe.expectNext();
+    final Pair<Path, DirectoryChanges.Change> pair2 = probe.requestNext();
     assertEquals(pair2.second(), DirectoryChanges.Change.Modification);
     assertEquals(pair2.first(), createdFile);
 
     Files.delete(createdFile);
 
-    probe.request(1);
-    final Pair<Path, DirectoryChanges.Change> pair3 = probe.expectNext();
+    final Pair<Path, DirectoryChanges.Change> pair3 = probe.requestNext();
     assertEquals(pair3.second(), DirectoryChanges.Change.Deletion);
     assertEquals(pair3.first(), createdFile);
 
