@@ -132,7 +132,10 @@ final class AmqpSource(settings: AmqpSourceSettings, bufferSize: Int) extends Gr
         // nack any buffered messages to broker if possible
         if (channel.isOpen) {
           queue.headOption.foreach(message =>
-            channel.basicNack(message.envelope.getDeliveryTag, true, true))
+            channel.basicNack(
+              message.envelope.getDeliveryTag,
+              true, // multiple - nack every outstanding up to this
+              true)) // requeue - make the messages available for delivery again
         }
       }
 
