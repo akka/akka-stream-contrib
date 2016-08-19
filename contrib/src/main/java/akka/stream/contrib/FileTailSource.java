@@ -15,6 +15,7 @@ import scala.util.Failure;
 import scala.util.Success;
 import scala.util.Try;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
@@ -63,75 +64,69 @@ public final class FileTailSource extends GraphStage<SourceShape<ByteString>> {
   }
 
   @Override
-  public GraphStageLogic createLogic(Attributes inheritedAttributes) {
-    try {
-      if (!Files.exists(path)) throw new IllegalArgumentException("Path '" + path + "' does not exist");
-      if (Files.isDirectory(path)) throw new IllegalArgumentException("Path '" + path + "' cannot be tailed, it is a directory");
-      if (!Files.isReadable(path)) throw new IllegalArgumentException("No read permission for '" + path + "'");
+  public GraphStageLogic createLogic(Attributes inheritedAttributes) throws IOException {
+    if (!Files.exists(path)) throw new IllegalArgumentException("Path '" + path + "' does not exist");
+    if (Files.isDirectory(path)) throw new IllegalArgumentException("Path '" + path + "' cannot be tailed, it is a directory");
+    if (!Files.isReadable(path)) throw new IllegalArgumentException("No read permission for '" + path + "'");
 
-      return new TimerGraphStageLogic(shape) {
-        private final ByteBuffer buffer = ByteBuffer.allocate(maxChunkSize);
-        private final AsynchronousFileChannel channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
+    return new TimerGraphStageLogic(shape) {
+      private final ByteBuffer buffer = ByteBuffer.allocate(maxChunkSize);
+      private final AsynchronousFileChannel channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
 
-        private long position = startingPosition;
-        private AsyncCallback<Try<Integer>> chunkCallback;
+      private long position = startingPosition;
+      private AsyncCallback<Try<Integer>> chunkCallback;
 
-        {
-          setHandler(out, new AbstractOutHandler() {
-            @Override
-            public void onPull() throws Exception {
-              doPull();
-            }
-          });
-        }
-
-        @Override
-        public void preStart() {
-          chunkCallback = createAsyncCallback((tryInteger) -> {
-            if (tryInteger.isSuccess()) {
-              int readBytes = tryInteger.get();
-              if (readBytes > 0) {
-                buffer.flip();
-                push(out, ByteString.fromByteBuffer(buffer));
-                position += readBytes;
-                buffer.clear();
-              } else {
-                // hit end, try again in a while
-                scheduleOnce("poll", pollingInterval);
-              }
-
-            } else {
-              failStage(tryInteger.failed().get());
-            }
-
-          });
-        }
-
-        @Override
-        public void onTimer(Object timerKey) {
-          doPull();
-        }
-
-
-        private void doPull() {
-          channel.read(buffer, position, chunkCallback, completionHandler);
-        }
-
-        @Override
-        public void postStop() {
-          try {
-            if (channel.isOpen()) channel.close();
-          } catch(Exception ex) {
-            // Remove when #21168 is fixed
-            throw new RuntimeException(ex);
+      {
+        setHandler(out, new AbstractOutHandler() {
+          @Override
+          public void onPull() throws Exception {
+            doPull();
           }
-        }
-      };
+        });
+      }
 
-    } catch (Exception ex) {
-      // remove when #21168 is fixed
-      throw new RuntimeException(ex);
-    }
+      @Override
+      public void preStart() {
+        chunkCallback = createAsyncCallback((tryInteger) -> {
+          if (tryInteger.isSuccess()) {
+            int readBytes = tryInteger.get();
+            if (readBytes > 0) {
+              buffer.flip();
+              push(out, ByteString.fromByteBuffer(buffer));
+              position += readBytes;
+              buffer.clear();
+            } else {
+              // hit end, try again in a while
+              scheduleOnce("poll", pollingInterval);
+            }
+
+          } else {
+            failStage(tryInteger.failed().get());
+          }
+
+        });
+      }
+
+      @Override
+      public void onTimer(Object timerKey) {
+        doPull();
+      }
+
+
+      private void doPull() {
+        channel.read(buffer, position, chunkCallback, completionHandler);
+      }
+
+      @Override
+      public void postStop() {
+        try {
+          if (channel.isOpen()) channel.close();
+        } catch(Exception ex) {
+          // Remove when #21168 is fixed
+          throw new RuntimeException(ex);
+        }
+      }
+    };
   }
 
 
