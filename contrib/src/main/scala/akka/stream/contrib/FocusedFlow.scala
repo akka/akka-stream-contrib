@@ -1,5 +1,6 @@
 package akka.stream.contrib
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream._
 import akka.stream.contrib.FocusedSource.IncompleteFocusedSourceShape
@@ -10,8 +11,24 @@ import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.immutable
 
 object FocusedFlow {
-  implicit class FocusedFlowOps[Tag, Src, Mat](from: Flow[_, (Tag, Src), Mat]) {
-    def focus = new FocusedFlow(BidiFlow.fromFlowsMat(from, Flow[Src])(Keep.left))
+  implicit class FocusedFlowOps[Tag, Src, In, Mat](from: Flow[Src, (Tag, In), Mat]) {
+    def focus = new FocusedFlow(BidiFlow.fromFlowsMat(from, Flow[In])(Keep.left))
+  }
+
+  def main(args: Array[String]): Unit = {
+    implicit val system = ActorSystem()
+    implicit val materializer = ActorMaterializer()
+
+    val flow: Flow[(Int, String), (Int, String), NotUsed] = Flow[(Int, String)]
+      .focus
+        .map(_.toUpperCase)
+        .filterNot(_.startsWith("T"))
+      .unfocus
+    val foo = Source(List((1, "one"), (2, "two"), (3, "three"), (4, "four")))
+      .via(flow)
+      .runWith(Sink.foreach(println))
+
+    system.terminate()
   }
 }
 
@@ -103,7 +120,7 @@ private object FocusedSource {
 
   private final case class IncompleteFocusedSourceShape[+SrcIn, In, +Out](
    srcIn: Outlet[SrcIn@uncheckedVariance],
-   in: Inlet[In@uncheckedVariance],
+   in: Inlet[In],
    out: Outlet[Out@uncheckedVariance]
   ) extends Shape {
     override val inlets: immutable.Seq[Inlet[_]] = List(in)
