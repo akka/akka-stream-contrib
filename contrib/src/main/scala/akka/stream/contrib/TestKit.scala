@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
-package akka.stream.constrib
+package akka.stream.contrib
 
 import akka.actor.ActorRef
 import akka.actor.ActorRefWithCell
