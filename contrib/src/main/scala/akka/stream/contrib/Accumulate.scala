@@ -21,6 +21,7 @@ object Accumulate {
    * @tparam B output type
    * @return [[Accumulate]] instance
    */
+  @deprecated("Use scan and drop(1) instead", since = "0.5")
   def apply[A, B](zero: B)(f: (B, A) => B): Accumulate[A, B] = new Accumulate(zero)(f)
 
   /**
@@ -32,6 +33,7 @@ object Accumulate {
    * @tparam B output type
    * @return [[Accumulate]] instance
    */
+  @deprecated("Use scan and drop(1) instead", since = "0.5")
   def create[A, B](zero: B, f: function.Function2[B, A, B]): Accumulate[A, B] = new Accumulate(zero)(f.apply)
 }
 
@@ -44,6 +46,7 @@ object Accumulate {
  * @tparam A input type
  * @tparam B output type
  */
+@deprecated("Use scan and drop(1) instead", since = "0.5")
 final class Accumulate[A, B] private (zero: B)(f: (B, A) => B) extends GraphStage[FlowShape[A, B]] {
 
   override val shape = FlowShape(Inlet[A]("accumulate.in"), Outlet[B]("accumulate.out"))
