@@ -11,7 +11,7 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 
 object Common extends AutoPlugin {
 
-  val AkkaVersion = "2.4.10"
+  val AkkaVersion = "2.4.12"
 
   override def trigger = allRequirements
   override def requires = plugins.JvmPlugin && HeaderPlugin
@@ -22,8 +22,9 @@ object Common extends AutoPlugin {
 
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
 
-    scalaVersion := "2.11.8",
+    scalaVersion := "2.12.0",
     crossVersion := CrossVersion.binary,
+    crossScalaVersions := Vector(scalaVersion.value, "2.11.8"),
 
     scalacOptions ++= Seq(
       "-encoding", "UTF-8",
@@ -48,7 +49,7 @@ object Common extends AutoPlugin {
     libraryDependencies ++= Seq(
       "com.typesafe.akka"      %% "akka-stream"                         % AkkaVersion,
       "com.typesafe.akka"      %% "akka-stream-testkit"                 % AkkaVersion   % "test",
-      "org.scalatest"          %% "scalatest"                           % "2.2.6"       % "test" // ApacheV2
+      "org.scalatest"          %% "scalatest"                           % "3.0.0"       % "test" // ApacheV2
     ),
 
     headers := headers.value ++ Map(
