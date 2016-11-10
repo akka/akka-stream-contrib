@@ -22,9 +22,9 @@ object Common extends AutoPlugin {
 
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
 
-    scalaVersion := "2.12.0",
     crossVersion := CrossVersion.binary,
-    crossScalaVersions := Vector(scalaVersion.value, "2.11.8"),
+    crossScalaVersions := Seq("2.11.8", "2.12.0"),
+    scalaVersion := crossScalaVersions.value.head,
 
     scalacOptions ++= Seq(
       "-encoding", "UTF-8",
