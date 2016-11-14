@@ -1,5 +1,4 @@
 language: scala
-sudo: false
 scala:
   - "2.11.8"
   - "2.12.0"
@@ -9,7 +8,3 @@ cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot
-sudo: required
-services:
-  - rabbitmq
-  - cassandra
