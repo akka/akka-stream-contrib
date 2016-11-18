@@ -143,6 +143,28 @@ class ValveSpec extends WordSpec with ScalaFutures {
       }
     }
 
+    "not pull elements again when opened and closed and re-opened" in {
+
+      val (probe, switch, resultFuture) = TestSource.probe[Int]
+        .viaMat(Valve(SwitchMode.Close))(Keep.both)
+        .toMat(Sink.head)((l, r) => (l._1, l._2, r))
+        .run()
+
+      val result = for {
+        _ <- switch.flip(SwitchMode.Open)
+        _ <- switch.flip(SwitchMode.Close)
+        _ <- switch.flip(SwitchMode.Open)
+        _ = probe.sendNext(1)
+        _ = probe.sendComplete()
+        r <- resultFuture
+      } yield r
+
+
+      whenReady(result) {
+        _ shouldBe 1
+      }
+    }
+
   }
 
   "A opened valve" should {
@@ -222,6 +244,27 @@ class ValveSpec extends WordSpec with ScalaFutures {
 
       whenReady(seq.failed) { e =>
         e shouldBe an[IllegalArgumentException]
+      }
+    }
+
+    "not pull elements again when closed and re-opened" in {
+
+      val (probe, switch, resultFuture) = TestSource.probe[Int]
+        .viaMat(Valve())(Keep.both)
+        .toMat(Sink.head)((l, r) => (l._1, l._2, r))
+        .run()
+
+      val result = for {
+        _ <- switch.flip(SwitchMode.Close)
+        _ <- switch.flip(SwitchMode.Open)
+        _ = probe.sendNext(1)
+        _ = probe.sendComplete()
+        r <- resultFuture
+      } yield r
+
+
+      whenReady(result) {
+        _ shouldBe 1
       }
     }
   }
