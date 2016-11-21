@@ -84,7 +84,7 @@ final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[F
             case Close =>
               if (isAvailable(in)) {
                 push(out, grab(in))
-              } else if (isAvailable(out)) {
+              } else if (isAvailable(out) && !hasBeenPulled(in)) {
                 pull(in)
               }
 
