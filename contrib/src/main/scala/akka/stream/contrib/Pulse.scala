@@ -12,6 +12,10 @@ import scala.concurrent.duration.FiniteDuration
 /**
  * Signals demand only once every [[interval]] (''pulse'') and then back-pressures. Requested element is emitted downstream if there is demand.
  *
+ * It can be used to implement simple time-window processing
+ * where data is aggregated for predefined amount of time and the computed aggregate is emitted once per this time.
+ * See [[TimeWindow]]
+ *
  * @param interval ''pulse'' period
  * @param initiallyOpen if `true` - emits the first available element before ''pulsing''
  * @tparam T type of element
