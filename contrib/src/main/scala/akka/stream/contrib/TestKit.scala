@@ -19,15 +19,16 @@ object TestKit {
   val UnboundedMailboxConfig = ConfigFactory.parseString("""akka.actor.default-mailbox.mailbox-type = "akka.dispatch.UnboundedMailbox"""")
 
   case class TE(message: String) extends RuntimeException(message) with NoStackTrace
+  final case class StageStoppingTimeout(time: FiniteDuration) extends AnyVal
 
-  def assertAllStagesStopped[T](block: ⇒ T)(implicit materializer: Materializer): T =
+  def assertAllStagesStopped[T](block: ⇒ T)(implicit timeout: StageStoppingTimeout = StageStoppingTimeout(5.seconds), materializer: Materializer): T =
     materializer match {
       case impl: ActorMaterializer ⇒
         val probe = TestProbe()(impl.system)
         probe.send(impl.supervisor, StreamSupervisor.StopChildren)
         probe.expectMsg(StreamSupervisor.StoppedChildren)
         val result = block
-        probe.within(5.seconds) {
+        probe.within(timeout.time) {
           var children = Set.empty[ActorRef]
           try probe.awaitAssert {
             impl.supervisor.tell(StreamSupervisor.GetChildren, probe.ref)
