@@ -13,7 +13,8 @@ import java.util.concurrent.{ TimeoutException, CountDownLatch }
 import scala.concurrent.{ Promise, Awaitable, CanAwait, Await }
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
-import akka.testkit.{ TestKit, TestDuration }
+
+import akka.testkit.{ TestDuration, TestKit => TK }
 
 /**
  * The Coroner can be used to print a diagnostic report of the JVM state,
@@ -250,8 +251,7 @@ object Coroner { // FIXME: remove once going back to project dependencies
  * If displayThreadCounts is set to true, then the Coroner will print thread
  * counts during start and stop.
  */
-trait WatchedByCoroner {
-  self: TestKit ⇒
+trait WatchedByCoroner { self: TK ⇒
 
   @volatile private var coronerWatch: Coroner.WatchHandle = _
 

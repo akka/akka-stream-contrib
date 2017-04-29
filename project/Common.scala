@@ -11,7 +11,7 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 
 object Common extends AutoPlugin {
 
-  val AkkaVersion = "2.4.12"
+  val AkkaVersion = "2.5.0"
 
   override def trigger = allRequirements
   override def requires = plugins.JvmPlugin && HeaderPlugin
@@ -23,7 +23,7 @@ object Common extends AutoPlugin {
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
 
     crossVersion := CrossVersion.binary,
-    crossScalaVersions := Seq("2.11.8", "2.12.0"),
+    crossScalaVersions := Seq("2.11.8", "2.12.1"),
     scalaVersion := crossScalaVersions.value.head,
 
     scalacOptions ++= Seq(

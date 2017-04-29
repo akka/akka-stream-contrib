@@ -63,7 +63,7 @@ case class Sample[T](next: () => Int) extends GraphStage[FlowShape[T, T]] {
     private def getNextStep(): Long = {
       val nextStep = next()
       require(nextStep > 0, s"sampling step should be a positive value: ${nextStep}")
-      nextStep
+      nextStep.toLong
     }
 
     setHandlers(in, out, this)
