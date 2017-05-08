@@ -34,7 +34,7 @@ final class Pulse[T](val interval: FiniteDuration, val initiallyOpen: Boolean = 
       }
 
       override protected def onTimer(timerKey: Any): Unit = {
-        if (!isClosed(in) && !hasBeenPulled(in)) pull(in)
+        if (isAvailable(out) && !isClosed(in) && !hasBeenPulled(in)) pull(in)
       }
 
       private def startPulsing() = {

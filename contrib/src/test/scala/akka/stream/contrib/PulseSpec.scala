@@ -3,8 +3,8 @@
  */
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{ Keep, Sink, Source }
-import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestDuration
 import org.scalatest.concurrent.ScalaFutures
 
@@ -43,11 +43,12 @@ trait PulseSpec extends BaseStreamSpec with ScalaFutures {
         .via(new Pulse[Int](window.dilated))
         .runWith(TestSink.probe)
 
-      probe.expectSubscription()
+      probe.ensureSubscription()
       // lets waste some time without a demand and let pulse run its timer
       probe.expectNoMsg(window * 10)
 
-      elements.foreach(probe.requestNext)
+      probe.request(elements.length.toLong)
+      elements.foreach(probe.expectNext)
     }
 
   }
