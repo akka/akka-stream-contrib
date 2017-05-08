@@ -21,7 +21,7 @@ object TestKit {
 
   def assertAllStagesStopped[T](block: ⇒ T)(implicit materializer: Materializer): T =
     materializer match {
-      case impl: ActorMaterializerImpl ⇒
+      case impl: ExtendedActorMaterializer ⇒
         val probe = TestProbe()(impl.system)
         probe.send(impl.supervisor, StreamSupervisor.StopChildren)
         probe.expectMsg(StreamSupervisor.StoppedChildren)
