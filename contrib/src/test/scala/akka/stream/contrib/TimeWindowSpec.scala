@@ -35,13 +35,13 @@ trait TimeWindowSpec extends BaseStreamSpec with ScalaFutures {
       pub.sendNext(1)
       pub.sendNext(1)
       pub.sendNext(1)
-      sub.expectNext(timeWindow, 5)
+      sub.expectNext(timeWindow * 2, 5)
       pub.sendNext(1)
       pub.sendNext(1)
       pub.sendNext(1)
       pub.sendNext(1)
       pub.sendNext(1)
-      sub.expectNext(timeWindow, 5)
+      sub.expectNext(timeWindow * 2, 5)
     }
 
     "emit the first seed if eager" in {
