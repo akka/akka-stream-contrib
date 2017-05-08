@@ -4,7 +4,7 @@
 package akka.stream.contrib
 
 import akka.stream.scaladsl.Keep
-import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
+import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestDuration
 import org.scalatest.concurrent.ScalaFutures
 
@@ -17,7 +17,7 @@ class TimeWindowSpecAutoFusingOff extends { val autoFusing = false } with TimeWi
 class TimeWindowSpecAutoFusingOn extends { val autoFusing = true } with TimeWindowSpec
 
 trait TimeWindowSpec extends BaseStreamSpec with ScalaFutures {
-  private val timeWindow = 500.milliseconds
+  private val timeWindow = 100.milliseconds
 
   "TimeWindow flow" should {
     "aggregate data for predefined amount of time" in {

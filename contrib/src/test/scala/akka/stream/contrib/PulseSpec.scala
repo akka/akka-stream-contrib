@@ -14,7 +14,7 @@ class PulseSpecAutoFusingOff extends { val autoFusing = false } with PulseSpec
 class PulseSpecAutoFusingOn extends { val autoFusing = true } with PulseSpec
 
 trait PulseSpec extends BaseStreamSpec with ScalaFutures {
-  private val pulseInterval = 500.milliseconds
+  private val pulseInterval = 20.milliseconds
 
   "Pulse Stage" should {
 
@@ -36,16 +36,15 @@ trait PulseSpec extends BaseStreamSpec with ScalaFutures {
     }
 
     "keep backpressure if there is no demand from downstream" in {
-      val window = 10.millis
       val elements = 1 to 10
 
       val probe = Source(elements)
-        .via(new Pulse[Int](window.dilated))
+        .via(new Pulse[Int](pulseInterval.dilated))
         .runWith(TestSink.probe)
 
       probe.ensureSubscription()
       // lets waste some time without a demand and let pulse run its timer
-      probe.expectNoMsg(window * 10)
+      probe.expectNoMsg(pulseInterval * 10)
 
       probe.request(elements.length.toLong)
       elements.foreach(probe.expectNext)
