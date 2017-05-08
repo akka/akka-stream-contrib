@@ -3,8 +3,8 @@
  */
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.testkit.scaladsl.TestSource
+import akka.stream.scaladsl.{ Keep, Sink, Source }
+import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
 import akka.testkit.TestDuration
 import org.scalatest.concurrent.ScalaFutures
 
@@ -33,6 +33,21 @@ trait PulseSpec extends BaseStreamSpec with ScalaFutures {
       whenReady(future) {
         _ should contain inOrderOnly (1, 2)
       }
+    }
+
+    "keep backpressure if there is no demand from downstream" in {
+      val window = 10.millis
+      val elements = 1 to 10
+
+      val probe = Source(elements)
+        .via(new Pulse[Int](window.dilated))
+        .runWith(TestSink.probe)
+
+      probe.expectSubscription()
+      // lets waste some time without a demand and let pulse run its timer
+      probe.expectNoMsg(window * 10)
+
+      elements.foreach(probe.requestNext)
     }
 
   }

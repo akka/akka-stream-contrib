@@ -159,7 +159,6 @@ class ValveSpec extends WordSpec with ScalaFutures {
         r <- resultFuture
       } yield r
 
-
       whenReady(result) {
         _ shouldBe 1
       }
@@ -261,7 +260,6 @@ class ValveSpec extends WordSpec with ScalaFutures {
         _ = probe.sendComplete()
         r <- resultFuture
       } yield r
-
 
       whenReady(result) {
         _ shouldBe 1
