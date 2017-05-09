@@ -26,98 +26,106 @@ class ValveSpec extends WordSpec with ScalaFutures {
 
     "emit only 3 elements into a sequence when the valve is switched to open" in {
 
-      val (switch, seq) = Source(1 to 3)
+      val (switchFut, seq) = Source(1 to 3)
         .viaMat(new Valve(SwitchMode.Close))(Keep.right)
         .toMat(Sink.seq)(Keep.both)
         .run()
 
-      after(100 millis, system.scheduler) {
-        val future: Future[Boolean] = switch.flip(Open)
-        whenReady(future, timeout(200 millis)) {
-          _ shouldBe true
+      whenReady(switchFut) { switch =>
+        after(100 millis, system.scheduler) {
+          val future: Future[Boolean] = switch.flip(Open)
+          whenReady(future, timeout(200 millis)) {
+            _ shouldBe true
+          }
+
+          future
         }
 
-        future
-      }
-
-      whenReady(seq, timeout(200 millis)) {
-        _ should contain inOrder (1, 2, 3)
+        whenReady(seq, timeout(200 millis)) {
+          _ should contain inOrder (1, 2, 3)
+        }
       }
     }
 
     "emit only 5 elements when the valve is switched to open" in {
-      val (switch, probe) = Source(1 to 5)
+      val (switchFut, probe) = Source(1 to 5)
         .viaMat(new Valve(SwitchMode.Close))(Keep.right)
         .toMat(TestSink.probe[Int])(Keep.both)
         .run()
 
-      probe.request(2)
-      probe.expectNoMsg(100 millis)
+      whenReady(switchFut) { switch =>
+        probe.request(2)
+        probe.expectNoMsg(100 millis)
 
-      whenReady(switch.flip(Open)) {
-        _ shouldBe true
+        whenReady(switch.flip(Open)) {
+          _ shouldBe true
+        }
+
+        probe.expectNext shouldBe 1
+        probe.expectNext shouldBe 2
+
+        probe.request(3)
+        probe.expectNext shouldBe 3
+        probe.expectNext shouldBe 4
+        probe.expectNext shouldBe 5
+
+        probe.expectComplete()
       }
-
-      probe.expectNext shouldBe 1
-      probe.expectNext shouldBe 2
-
-      probe.request(3)
-      probe.expectNext shouldBe 3
-      probe.expectNext shouldBe 4
-      probe.expectNext shouldBe 5
-
-      probe.expectComplete()
     }
 
     "emit only 3 elements when the valve is switch to open/close/open" in {
-      val ((sourceProbe, switch), sinkProbe) = TestSource.probe[Int]
+      val ((sourceProbe, switchFut), sinkProbe) = TestSource.probe[Int]
         .viaMat(Valve())(Keep.both)
         .toMat(TestSink.probe[Int])(Keep.both)
         .run()
 
-      sinkProbe.request(1)
-      whenReady(switch.flip(Close)) {
-        _ shouldBe true
+      whenReady(switchFut) { switch =>
+        sinkProbe.request(1)
+        whenReady(switch.flip(Close)) {
+          _ shouldBe true
+        }
+        sourceProbe.sendNext(1)
+        sinkProbe.expectNoMsg(100 millis)
+
+        whenReady(switch.flip(Open)) {
+          _ shouldBe true
+        }
+        sinkProbe.expectNext shouldEqual 1
+
+        whenReady(switch.flip(Close)) {
+          _ shouldBe true
+        }
+        whenReady(switch.flip(Open)) {
+          _ shouldBe true
+        }
+        sinkProbe.expectNoMsg(100 millis)
+
+        sinkProbe.request(1)
+        sinkProbe.request(1)
+        sourceProbe.sendNext(2)
+        sourceProbe.sendNext(3)
+        sourceProbe.sendComplete()
+
+        sinkProbe.expectNext shouldBe 2
+        sinkProbe.expectNext shouldBe 3
+
+        sinkProbe.expectComplete()
       }
-      sourceProbe.sendNext(1)
-      sinkProbe.expectNoMsg(100 millis)
-
-      whenReady(switch.flip(Open)) {
-        _ shouldBe true
-      }
-      sinkProbe.expectNext shouldEqual 1
-
-      whenReady(switch.flip(Close)) {
-        _ shouldBe true
-      }
-      whenReady(switch.flip(Open)) {
-        _ shouldBe true
-      }
-      sinkProbe.expectNoMsg(100 millis)
-
-      sinkProbe.request(1)
-      sinkProbe.request(1)
-      sourceProbe.sendNext(2)
-      sourceProbe.sendNext(3)
-      sourceProbe.sendComplete()
-
-      sinkProbe.expectNext shouldBe 2
-      sinkProbe.expectNext shouldBe 3
-
-      sinkProbe.expectComplete()
     }
 
     "return false when the valve is already closed" in {
-      val (switch, probe) = Source(1 to 5)
+      val (switchFut, probe) = Source(1 to 5)
         .viaMat(Valve(SwitchMode.Close))(Keep.right)
         .toMat(TestSink.probe[Int])(Keep.both)
         .run()
 
-      whenReady(switch.flip(Close)) { element =>
-        element should be(false)
-      }
-      whenReady(switch.flip(Close)) { element =>
-        element should be(false)
+      whenReady(switchFut) { switch =>
+        whenReady(switch.flip(Close)) { element =>
+          element should be(false)
+        }
+        whenReady(switch.flip(Close)) { element =>
+          element should be(false)
+        }
       }
     }
 
@@ -145,22 +153,24 @@ class ValveSpec extends WordSpec with ScalaFutures {
 
     "not pull elements again when opened and closed and re-opened" in {
 
-      val (probe, switch, resultFuture) = TestSource.probe[Int]
+      val (probe, switchFut, resultFuture) = TestSource.probe[Int]
         .viaMat(Valve(SwitchMode.Close))(Keep.both)
         .toMat(Sink.head)((l, r) => (l._1, l._2, r))
         .run()
 
-      val result = for {
-        _ <- switch.flip(SwitchMode.Open)
-        _ <- switch.flip(SwitchMode.Close)
-        _ <- switch.flip(SwitchMode.Open)
-        _ = probe.sendNext(1)
-        _ = probe.sendComplete()
-        r <- resultFuture
-      } yield r
+      whenReady(switchFut) { switch =>
+        val result = for {
+          _ <- switch.flip(SwitchMode.Open)
+          _ <- switch.flip(SwitchMode.Close)
+          _ <- switch.flip(SwitchMode.Open)
+          _ = probe.sendNext(1)
+          _ = probe.sendComplete()
+          r <- resultFuture
+        } yield r
 
-      whenReady(result) {
-        _ shouldBe 1
+        whenReady(result) {
+          _ shouldBe 1
+        }
       }
     }
 
@@ -169,45 +179,49 @@ class ValveSpec extends WordSpec with ScalaFutures {
   "A opened valve" should {
 
     "emit 5 elements after it has been close/open" in {
-      val (switch, probe) = Source(1 to 5)
+      val (switchFut, probe) = Source(1 to 5)
         .viaMat(Valve())(Keep.right)
         .toMat(TestSink.probe[Int])(Keep.both)
         .run()
 
-      probe.request(2)
-      probe.expectNext() shouldBe 1
-      probe.expectNext() shouldBe 2
+      whenReady(switchFut) { switch =>
+        probe.request(2)
+        probe.expectNext() shouldBe 1
+        probe.expectNext() shouldBe 2
 
-      whenReady(switch.flip(Close)) {
-        _ shouldBe true
+        whenReady(switch.flip(Close)) {
+          _ shouldBe true
+        }
+
+        probe.request(1)
+        probe.expectNoMsg(100 millis)
+
+        whenReady(switch.flip(Open)) {
+          _ shouldBe true
+        }
+        probe.expectNext() shouldBe 3
+
+        probe.request(2)
+        probe.expectNext() shouldBe 4
+        probe.expectNext() shouldBe 5
+
+        probe.expectComplete()
       }
-
-      probe.request(1)
-      probe.expectNoMsg(100 millis)
-
-      whenReady(switch.flip(Open)) {
-        _ shouldBe true
-      }
-      probe.expectNext() shouldBe 3
-
-      probe.request(2)
-      probe.expectNext() shouldBe 4
-      probe.expectNext() shouldBe 5
-
-      probe.expectComplete()
     }
 
     "return false when the valve is already opened" in {
-      val (switch, probe) = Source(1 to 5)
+      val (switchFut, probe) = Source(1 to 5)
         .viaMat(Valve())(Keep.right)
         .toMat(TestSink.probe[Int])(Keep.both)
         .run()
 
-      whenReady(switch.flip(Open)) {
-        _ shouldBe false
-      }
-      whenReady(switch.flip(Open)) {
-        _ shouldBe false
+      whenReady(switchFut) { switch =>
+        whenReady(switch.flip(Open)) {
+          _ shouldBe false
+        }
+        whenReady(switch.flip(Open)) {
+          _ shouldBe false
+        }
       }
     }
 
@@ -248,21 +262,23 @@ class ValveSpec extends WordSpec with ScalaFutures {
 
     "not pull elements again when closed and re-opened" in {
 
-      val (probe, switch, resultFuture) = TestSource.probe[Int]
+      val (probe, switchFut, resultFuture) = TestSource.probe[Int]
         .viaMat(Valve())(Keep.both)
         .toMat(Sink.head)((l, r) => (l._1, l._2, r))
         .run()
 
-      val result = for {
-        _ <- switch.flip(SwitchMode.Close)
-        _ <- switch.flip(SwitchMode.Open)
-        _ = probe.sendNext(1)
-        _ = probe.sendComplete()
-        r <- resultFuture
-      } yield r
+      whenReady(switchFut) { switch =>
+        val result = for {
+          _ <- switch.flip(SwitchMode.Close)
+          _ <- switch.flip(SwitchMode.Open)
+          _ = probe.sendNext(1)
+          _ = probe.sendComplete()
+          r <- resultFuture
+        } yield r
 
-      whenReady(result) {
-        _ shouldBe 1
+        whenReady(result) {
+          _ shouldBe 1
+        }
       }
     }
   }

@@ -5,10 +5,11 @@ package akka.stream.contrib
 
 import akka.actor.ActorRef
 import akka.actor.ActorRefWithCell
-import akka.stream.Materializer
+import akka.stream.{ ActorMaterializer, Materializer }
 import akka.stream.impl._
 import akka.testkit.TestProbe
 import com.typesafe.config.ConfigFactory
+
 import scala.concurrent.duration._
 import scala.util.control.NoStackTrace
 
@@ -21,7 +22,7 @@ object TestKit {
 
   def assertAllStagesStopped[T](block: ⇒ T)(implicit materializer: Materializer): T =
     materializer match {
-      case impl: ActorMaterializerImpl ⇒
+      case impl: ActorMaterializer ⇒
         val probe = TestProbe()(impl.system)
         probe.send(impl.supervisor, StreamSupervisor.StopChildren)
         probe.expectMsg(StreamSupervisor.StoppedChildren)
