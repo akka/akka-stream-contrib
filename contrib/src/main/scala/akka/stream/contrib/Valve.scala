@@ -50,13 +50,13 @@ object Valve {
 }
 
 /**
- * Materializes into a [[ValveSwitch]] which provides a the method flip that stops or restarts the flow of elements passing through the stage. As long as the valve is closed it will backpressure.
+ * Materializes into a [[Future]] of [[ValveSwitch]] which provides a the method flip that stops or restarts the flow of elements passing through the stage. As long as the valve is closed it will backpressure.
  *
  * Note that closing the valve could result in one element being buffered inside the stage, and if the stream completes or fails while being closed, that element may be lost.
  *
  * @param mode state of the valve at the startup of the flow (by default Open)
  */
-final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[FlowShape[A, A], ValveSwitch] {
+final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[FlowShape[A, A], Future[ValveSwitch]] {
 
   val in: Inlet[A] = Inlet[A]("valve.in")
 
@@ -64,13 +64,16 @@ final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[F
 
   override val shape = FlowShape(in, out)
 
-  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, ValveSwitch) = {
+  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[ValveSwitch]) = {
     val logic = new ValveGraphStageLogic(shape, mode)
-    (logic, logic.switch)
+    (logic, logic.promise.future)
   }
 
   private class ValveGraphStageLogic(shape: Shape, var mode: SwitchMode) extends GraphStageLogic(shape) with InHandler with OutHandler {
-    val switch = new ValveSwitch {
+
+    val promise = Promise[ValveSwitch]
+
+    private val switch = new ValveSwitch {
 
       val callback = getAsyncCallback[(SwitchMode, Promise[Boolean])] {
         case (flipToMode, promise) =>
@@ -117,6 +120,10 @@ final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[F
     }
 
     private def isOpen = mode == SwitchMode.Open
+
+    override def preStart() = {
+      promise.success(switch)
+    }
   }
 
 }

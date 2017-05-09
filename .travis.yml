@@ -1,9 +1,16 @@
 language: scala
+
 scala:
-  - "2.11.8"
-  - "2.12.0"
+  - "2.11.11"
+  - "2.12.2"
+
+env:
+  - akka.series=2.4
+  - akka.series=2.5
+
 jdk:
   - oraclejdk8
+
 cache:
   directories:
     - $HOME/.ivy2/cache

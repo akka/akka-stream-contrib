@@ -3,8 +3,8 @@
  */
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.testkit.scaladsl.{TestSink, TestSource}
+import akka.stream.scaladsl.{ Keep, Sink, Source }
+import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
 import akka.testkit.TestDuration
 import org.scalatest.concurrent.ScalaFutures
 

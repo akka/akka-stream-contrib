@@ -4,7 +4,7 @@
 package akka.stream.contrib
 
 import akka.stream.scaladsl.Keep
-import akka.stream.testkit.scaladsl.{TestSink, TestSource}
+import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
 import akka.testkit.TestDuration
 import org.scalatest.concurrent.ScalaFutures
 
