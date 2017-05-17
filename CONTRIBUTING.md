@@ -144,5 +144,5 @@ akka-stream-contrib uses [Scalariform](https://github.com/daniel-trinh/scalarifo
 
 1. Create a [new release](https://github.com/akka/akka-stream-contrib/releases/new) with the next tag version (e.g. `v0.3`), title and release decsription including notable changes.
 2. Fetch tags to your local clone: `git fetch --tags`.
-3. Publish signed release: `sbt publishSigned`.
-4. Stage and close [sonatype repository](https://oss.sonatype.org/).
+3. Publish signed release: `sbt -Dpublish.maven.central=true +publishSigned`.
+4. Close and release [sonatype repository](https://oss.sonatype.org/).
