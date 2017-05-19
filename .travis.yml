@@ -5,8 +5,8 @@ scala:
   - "2.12.2"
 
 env:
-  - akka.series=2.4
-  - akka.series=2.5
+  - AKKA_SERIES=2.4
+  - AKKA_SERIES=2.5
 
 jdk:
   - oraclejdk8
