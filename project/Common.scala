@@ -11,7 +11,7 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 
 object Common extends AutoPlugin {
 
-  val AkkaVersion = sys.env.get("akka.series") match {
+  val AkkaVersion = sys.env.get("AKKA_SERIES") match {
     case Some("2.5") => "2.5.1"
     case _ => "2.4.18"
   }
