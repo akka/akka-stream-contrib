@@ -33,17 +33,10 @@ class ValveSpec extends WordSpec with ScalaFutures {
 
       whenReady(switchFut) { switch =>
         after(100 millis, system.scheduler) {
-          val future: Future[Boolean] = switch.flip(Open)
-          whenReady(future, timeout(200 millis)) {
-            _ shouldBe true
-          }
+          switch.flip(Open)
+        }.futureValue shouldBe true
 
-          future
-        }
-
-        whenReady(seq, timeout(200 millis)) {
-          _ should contain inOrder (1, 2, 3)
-        }
+        seq.futureValue should contain inOrder (1, 2, 3)
       }
     }
 
