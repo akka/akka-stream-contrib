@@ -5,17 +5,19 @@ package akka.stream.contrib
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ Config, ConfigFactory }
 import org.scalatest.{ BeforeAndAfterAll, Matchers, WordSpec }
+
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 trait BaseStreamSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   protected implicit val system = {
-    def config = ConfigFactory.parseString(s"akka.stream.materializer.auto-fusing=$autoFusing")
+    def systemConfig = ConfigFactory.parseString(s"akka.stream.materializer.auto-fusing=$autoFusing")
+      .withFallback(config)
       .withFallback(ConfigFactory.load())
-    ActorSystem("default", config)
+    ActorSystem("default", systemConfig)
   }
 
   protected implicit val mat = ActorMaterializer()
@@ -26,4 +28,5 @@ trait BaseStreamSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   }
 
   protected def autoFusing: Boolean
+  protected def config: Config = ConfigFactory.empty()
 }

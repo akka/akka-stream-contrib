@@ -49,8 +49,9 @@ object Common extends AutoPlugin {
 
     libraryDependencies ++= Seq(
       "com.typesafe.akka"      %% "akka-stream"                         % AkkaVersion,
-      "com.typesafe.akka"      %% "akka-stream-testkit"                 % AkkaVersion   % "test",
-      "org.scalatest"          %% "scalatest"                           % "3.0.0"       % "test" // ApacheV2
+      "com.typesafe.akka"      %% "akka-stream-testkit"                 % AkkaVersion   % Test,
+      "org.scalatest"          %% "scalatest"                           % "3.0.0"       % Test, // ApacheV2
+      "com.miguno.akka"        %% "akka-mock-scheduler"                 % "0.5.1"       % Test // ApacheV2
     ),
 
     headers := headers.value ++ Map(
