@@ -11,7 +11,7 @@ import scala.concurrent.Future
 import scala.collection.immutable
 
 /**
- * This object defines a factory methods for retry operaions.
+ * This object defines methods for retry operations.
  */
 object Retry {
 
