@@ -20,6 +20,13 @@ sealed trait ValveSwitch {
    * @return A future that completes with true if the mode did change and false if it already was in the requested mode
    */
   def flip(mode: SwitchMode): Future[Boolean]
+
+  /**
+    * Obtain the state of the valve
+    *
+    * @return A future that completes with [[SwitchMode]] to indicate the current state of the valve
+    */
+  def getMode(): Future[SwitchMode]
 }
 
 object Valve {
@@ -75,7 +82,7 @@ final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[F
 
     private val switch = new ValveSwitch {
 
-      val callback = getAsyncCallback[(SwitchMode, Promise[Boolean])] {
+      val flipCallback = getAsyncCallback[(SwitchMode, Promise[Boolean])] {
         case (flipToMode, promise) =>
           val succeed = mode match {
             case _ if flipToMode == mode => false
@@ -98,9 +105,18 @@ final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[F
           promise.success(succeed)
       }
 
+      // FIXME will never complete promise if stage is stopped, use invokeWithFeedback when Akka 2.5.7 is released
+      val getModeCallback = getAsyncCallback[Promise[SwitchMode]](_.success(mode))
+
       override def flip(flipToMode: SwitchMode): Future[Boolean] = {
         val promise = Promise[Boolean]()
-        callback.invoke((flipToMode, promise))
+        flipCallback.invoke((flipToMode, promise))
+        promise.future
+      }
+
+      override def getMode(): Future[SwitchMode] = {
+        val promise = Promise[SwitchMode]()
+        getModeCallback.invoke(promise)
         promise.future
       }
     }
