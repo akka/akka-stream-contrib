@@ -167,6 +167,19 @@ class ValveSpec extends WordSpec with ScalaFutures {
       }
     }
 
+    "be in closed state" in {
+      val (switchFut, seq) = Source(1 to 3)
+        .viaMat(new Valve(SwitchMode.Close))(Keep.right)
+        .toMat(Sink.seq)(Keep.both)
+        .run()
+
+      whenReady(switchFut) { switch =>
+        whenReady(switch.getMode()) {
+          _ shouldBe Close
+        }
+      }
+    }
+
   }
 
   "A opened valve" should {
@@ -274,5 +287,18 @@ class ValveSpec extends WordSpec with ScalaFutures {
         }
       }
     }
+
+    "be in open state" in {
+      val (switchFut, probe) = Source(1 to 5)
+        .viaMat(Valve())(Keep.right)
+        .toMat(TestSink.probe[Int])(Keep.both)
+        .run()
+      whenReady(switchFut) { switch =>
+        whenReady(switch.getMode()) {
+          _ shouldBe Open
+        }
+      }
+    }
+
   }
 }
