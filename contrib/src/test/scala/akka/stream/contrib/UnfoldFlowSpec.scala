@@ -5,7 +5,9 @@ package akka.stream.contrib
 
 import akka.stream.scaladsl._
 import akka.stream.{ FlowShape, KillSwitches, OverflowStrategies }
-import akka.stream.testkit.scaladsl.TestSink
+import akka.stream.testkit.{ TestSubscriber, TestPublisher }
+import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
+import scala.concurrent.duration.{ DurationLong, DurationInt }
 
 class UnfoldFlowSpecAutoFusingOn extends { val autoFusing = true } with UnfoldFlowSpec
 class UnfoldFlowSpecAutoFusingOff extends { val autoFusing = false } with UnfoldFlowSpec
@@ -78,139 +80,234 @@ trait UnfoldFlowSpec extends BaseStreamSpec {
     }
 
     "increment integers & handle KillSwitch" should {
+      type SProbe = TestSubscriber.Probe[Int]
+      val timeout = com.typesafe.config.ConfigFactory.load().getDuration("akka.stream.contrib.unfold-flow-timeout").toMillis.millis
 
       "with simple flow" should {
 
-        "killSwitch prepended to flow" should {
-          val source = SourceGen.unfoldFlow(1)(Flow.fromGraph(KillSwitches.single[Int]).map { n =>
-            (n + 1, n)
-          })
+        type PProbe = TestPublisher.Probe[(Int, Int)]
+        val controlledFlow = Flow.fromSinkAndSourceMat[Int, (Int, Int), SProbe, PProbe, (SProbe, PProbe)](TestSink.probe[Int], TestSource.probe[(Int, Int)])(Keep.both)
+        val source = SourceGen.unfoldFlow(1)(controlledFlow)
 
-          "fail instantly when aborted" in {
-            val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-            val kill = new Exception("KILL!")
-            sink.ensureSubscription()
-            killSwitch.abort(kill)
-            sink.expectError(kill)
-          }
-
-          "fail when inner stream is canceled and pulled before completion" in {
-            val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-            val kill = new Exception("KILL!")
-            sink.ensureSubscription()
-            killSwitch.abort(kill)
-            sink.request(1)
-            sink.expectError(kill)
-          }
-
-          "fail after 3 elements when aborted" in {
-            val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-            val kill = new Exception("KILL!")
-            sink.requestNext(1)
-            sink.requestNext(2)
-            sink.requestNext(3)
-            killSwitch.abort(kill)
-            sink.expectError(kill)
-          }
-
-          "complete gracefully when stopped" in {
-            val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-            sink.ensureSubscription()
-            killSwitch.shutdown()
-            sink.expectComplete()
-          }
-
-          "complete gracefully after 3 elements when stopped" in {
-            val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-            sink.requestNext(1)
-            sink.requestNext(2)
-            sink.requestNext(3)
-            killSwitch.shutdown()
-            sink.expectComplete()
-          }
+        "fail instantly when aborted" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          val kill = new Exception("KILL!")
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          pub.sendError(kill)
+          snk.expectError(kill)
         }
 
-        "killSwitch appended to flow" should {
+        "fail after timeout when aborted" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          sub.cancel()
+          snk.expectNoMsg(timeout - 50.millis)
+          snk.expectError()
+        }
 
-          val source = SourceGen.unfoldFlow(1)(Flow[Int].map { n =>
-            (n + 1, n)
-          }.viaMat(KillSwitches.single)(Keep.right))
+        "fail when inner stream is canceled and pulled before completion" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          sub.cancel()
+          snk.request(1)
+          snk.expectNoMsg(timeout - 50.millis)
+          snk.expectError()
+        }
 
-          "fail instantly when aborted" in {
-            val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-            val kill = new Exception("KILL!")
-            sink.ensureSubscription()
-            killSwitch.abort(kill)
-            sink.expectError(kill)
-          }
+        "fail when inner stream is canceled, pulled before completion, and finally aborted" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          val kill = new Exception("KILL!")
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          sub.cancel()
+          snk.request(1)
+          pub.sendError(kill)
+          snk.expectError(kill)
+        }
 
-          "fail after 3 elements when aborted" in {
-            val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-            val kill = new Exception("KILL!")
-            sink.requestNext(1)
-            sink.requestNext(2)
-            sink.requestNext(3)
-            killSwitch.abort(kill)
-            sink.expectError(kill)
-          }
+        "fail after 3 elements when aborted" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          val kill = new Exception("KILL!")
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          snk.request(1)
+          sub.requestNext(1)
+          pub.sendNext(2 -> 1)
+          snk.expectNext(1)
+          snk.request(1)
+          sub.requestNext(2)
+          pub.sendNext(3 -> 2)
+          snk.expectNext(2)
+          snk.request(1)
+          sub.requestNext(3)
+          pub.sendNext(4 -> 3)
+          snk.expectNext(3)
+          pub.sendError(kill)
+          snk.expectError(kill)
+        }
 
-          "complete gracefully when stopped" in {
-            val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-            sink.ensureSubscription()
-            killSwitch.shutdown()
-            sink.expectComplete()
-          }
+        "complete gracefully instantly when stopped" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          pub.sendComplete()
+          snk.expectComplete()
+        }
 
-          "complete gracefully after 3 elements when stopped" in {
-            val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-            sink.requestNext(1)
-            sink.requestNext(2)
-            sink.requestNext(3)
-            killSwitch.shutdown()
-            sink.expectComplete()
+        "complete gracefully after timeout when stopped" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          sub.cancel()
+          snk.expectNoMsg(timeout - 50.millis)
+          pub.sendComplete()
+          snk.expectComplete()
+        }
 
-          }
+        "complete gracefully after 3 elements when stopped" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          snk.request(1)
+          sub.requestNext(1)
+          pub.sendNext(2 -> 1)
+          snk.expectNext(1)
+          snk.request(1)
+          sub.requestNext(2)
+          pub.sendNext(3 -> 2)
+          snk.expectNext(2)
+          snk.request(1)
+          sub.requestNext(3)
+          pub.sendNext(4 -> 3)
+          snk.expectNext(3)
+          pub.sendComplete()
+          snk.expectComplete()
         }
       }
 
       "with function" should {
 
-        val source = SourceGen.unfoldFlowWith(1, Flow.fromGraph(KillSwitches.single[Int])) { n =>
+        type PProbe = TestPublisher.Probe[Int]
+        val controlledFlow = Flow.fromSinkAndSourceMat[Int, Int, SProbe, PProbe, (SProbe, PProbe)](TestSink.probe[Int], TestSource.probe[Int])(Keep.both)
+        val source = SourceGen.unfoldFlowWith(1, controlledFlow) { n =>
           Some((n + 1, n))
         }
 
         "fail instantly when aborted" in {
-          val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
           val kill = new Exception("KILL!")
-          sink.ensureSubscription()
-          killSwitch.abort(kill)
-          sink.expectError(kill)
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          pub.sendError(kill)
+          snk.expectError(kill)
+        }
+
+        "fail after timeout when aborted" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          sub.cancel()
+          snk.expectNoMsg(timeout - 50.millis)
+          snk.expectError()
+        }
+
+        "fail when inner stream is canceled and pulled before completion" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          sub.cancel()
+          snk.request(1)
+          snk.expectNoMsg(timeout - 50.millis)
+          snk.expectError()
+        }
+
+        "fail when inner stream is canceled, pulled before completion, and finally aborted" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          val kill = new Exception("KILL!")
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          sub.cancel()
+          snk.request(1)
+          pub.sendError(kill)
+          snk.expectError(kill)
         }
 
         "fail after 3 elements when aborted" in {
-          val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
           val kill = new Exception("KILL!")
-          sink.requestNext(1)
-          sink.requestNext(2)
-          sink.requestNext(3)
-          killSwitch.abort(kill)
-          sink.expectError(kill)
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          snk.request(1)
+          sub.requestNext(1)
+          pub.sendNext(1)
+          snk.expectNext(1)
+          snk.request(1)
+          sub.requestNext(2)
+          pub.sendNext(2)
+          snk.expectNext(2)
+          snk.request(1)
+          sub.requestNext(3)
+          pub.sendNext(3)
+          snk.expectNext(3)
+          pub.sendError(kill)
+          snk.expectError(kill)
         }
 
-        "complete gracefully when stopped" in {
-          val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-          sink.ensureSubscription()
-          killSwitch.shutdown()
-          sink.expectComplete()
+        "complete gracefully instantly when stopped" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          pub.sendComplete()
+          snk.expectComplete()
+        }
+
+        "complete gracefully after timeout when stopped" in {
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          sub.cancel()
+          snk.expectNoMsg(timeout - 50.millis)
+          pub.sendComplete()
+          snk.expectComplete()
         }
 
         "complete gracefully after 3 elements when stopped" in {
-          val (killSwitch, sink) = source.toMat(TestSink.probe)(Keep.both).run()
-          sink.requestNext(1)
-          sink.requestNext(2)
-          sink.requestNext(3)
-          killSwitch.shutdown()
-          sink.expectComplete()
+          val ((sub, pub), snk) = source.toMat(TestSink.probe[Int])(Keep.both).run()
+          sub.ensureSubscription()
+          pub.ensureSubscription()
+          snk.ensureSubscription()
+          snk.request(1)
+          sub.requestNext(1)
+          pub.sendNext(1)
+          snk.expectNext(1)
+          snk.request(1)
+          sub.requestNext(2)
+          pub.sendNext(2)
+          snk.expectNext(2)
+          snk.request(1)
+          sub.requestNext(3)
+          pub.sendNext(3)
+          snk.expectNext(3)
+          pub.sendComplete()
+          snk.expectComplete()
         }
       }
     }
