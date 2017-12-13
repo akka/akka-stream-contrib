@@ -7,12 +7,11 @@ import akka.stream.{ Attributes, FanOutShape2 }
 import akka.stream.stage.{ GraphStage, GraphStageLogic, OutHandler }
 import com.typesafe.config.ConfigFactory
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
 /** INTERNAL API */
-private[akka] abstract class UnfoldFlowGraphStageLogic[O, S, E] private[stream] (shape: FanOutShape2[O, S, E], seed: S) extends GraphStageLogic(shape) {
+private[akka] abstract class UnfoldFlowGraphStageLogic[O, S, E] private[stream] (shape: FanOutShape2[O, S, E], seed: S, timeout: FiniteDuration) extends GraphStageLogic(shape) {
 
-  lazy val timeout = Duration.fromNanos(ConfigFactory.load().getDuration("akka.stream.contrib.unfold-flow-timeout").toNanos)
   val feedback = shape.out0
   val output = shape.out1
   val nextElem = shape.in
