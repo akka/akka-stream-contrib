@@ -4,15 +4,17 @@
 package akka.stream.contrib
 
 import akka.stream.scaladsl._
-import akka.stream.{ FlowShape, KillSwitches, OverflowStrategies }
-import akka.stream.testkit.{ TestSubscriber, TestPublisher }
+import akka.stream.OverflowStrategies
+import akka.stream.testkit.{ TestPublisher, TestSubscriber }
 import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
-import scala.concurrent.duration.{ DurationLong, DurationInt }
+import scala.concurrent.duration.{ DurationInt, DurationLong }
+import akka.util.Timeout
 
 class UnfoldFlowSpecAutoFusingOn extends { val autoFusing = true } with UnfoldFlowSpec
 class UnfoldFlowSpecAutoFusingOff extends { val autoFusing = false } with UnfoldFlowSpec
 
 trait UnfoldFlowSpec extends BaseStreamSpec {
+  implicit val unfoldTimeout: Timeout = 300.millis
 
   "unfoldFlow" should {
 

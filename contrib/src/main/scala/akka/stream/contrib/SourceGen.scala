@@ -6,15 +6,12 @@ package akka.stream.contrib
 import akka.stream._
 import akka.stream.scaladsl._
 import akka.stream.stage._
-import com.typesafe.config.ConfigFactory
-import scala.concurrent.duration.{ Duration, FiniteDuration }
+import akka.util.Timeout
 
 /**
  * Source factory methods are placed here
  */
 object SourceGen {
-  private[this] lazy val defaultTimeout = Duration.fromNanos(ConfigFactory.load().getDuration("akka.stream.contrib.unfold-flow-timeout").toNanos)
-
   /**
    * Create a `Source` that will unfold a value of type `S` by
    * passing it through a flow. The flow should emit a
@@ -33,7 +30,7 @@ object SourceGen {
    * exactly one element for every received element). Ignoring this, will have an unpredicted result,
    * and may result in a deadlock.
    */
-  def unfoldFlow[S, E, M](seed: S, timeout: FiniteDuration)(flow: Graph[FlowShape[S, (S, E)], M]): Source[E, M] = {
+  def unfoldFlow[S, E, M](seed: S)(flow: Graph[FlowShape[S, (S, E)], M])(implicit timeout: Timeout): Source[E, M] = {
 
     val generateUnfoldFlowGraphStageLogic = (shape: FanOutShape2[(S, E), S, E]) => new UnfoldFlowGraphStageLogic[(S, E), S, E](shape, seed, timeout) {
       setHandler(nextElem, new InHandler {
@@ -48,13 +45,6 @@ object SourceGen {
 
     unfoldFlowGraph(new FanOut2unfoldingStage(generateUnfoldFlowGraphStageLogic), flow)
   }
-
-  /**
-   * [[unfoldFlow]] with default timeout from configuration key
-   * `akka.stream.contrib.unfold-flow-timeout`.
-   */
-  def unfoldFlow[S, E, M](seed: S)(flow: Graph[FlowShape[S, (S, E)], M]): Source[E, M] =
-    unfoldFlow(seed, defaultTimeout)(flow)
 
   /**
    * Create a `Source` that will unfold a value of type `S` by
@@ -74,7 +64,7 @@ object SourceGen {
    * exactly one element for every received element). Ignoring this, will have an unpredicted result,
    * and may result in a deadlock.
    */
-  def unfoldFlowWith[E, S, O, M](seed: S, flow: Graph[FlowShape[S, O], M], timeout: FiniteDuration)(unfoldWith: O => Option[(S, E)]): Source[E, M] = {
+  def unfoldFlowWith[E, S, O, M](seed: S, flow: Graph[FlowShape[S, O], M])(unfoldWith: O => Option[(S, E)])(implicit timeout: Timeout): Source[E, M] = {
 
     val generateUnfoldFlowGraphStageLogic = (shape: FanOutShape2[O, S, E]) => new UnfoldFlowGraphStageLogic[O, S, E](shape, seed, timeout) {
       setHandler(nextElem, new InHandler {
@@ -94,13 +84,6 @@ object SourceGen {
 
     unfoldFlowGraph(new FanOut2unfoldingStage(generateUnfoldFlowGraphStageLogic), flow)
   }
-
-  /**
-   * [[unfoldFlowWith]] with default timeout from configuration key
-   * `akka.stream.contrib.unfold-flow-timeout`.
-   */
-  def unfoldFlowWith[E, S, O, M](seed: S, flow: Graph[FlowShape[S, O], M])(unfoldWith: O => Option[(S, E)]): Source[E, M] =
-    unfoldFlowWith(seed, flow, defaultTimeout)(unfoldWith)
 
   /** INTERNAL API */
   private[akka] def unfoldFlowGraph[E, S, O, M](
