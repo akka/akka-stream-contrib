@@ -83,7 +83,7 @@ trait UnfoldFlowSpec extends BaseStreamSpec {
 
     "increment integers & handle KillSwitch" should {
       type SProbe = TestSubscriber.Probe[Int]
-      val timeout = com.typesafe.config.ConfigFactory.load().getDuration("akka.stream.contrib.unfold-flow-timeout").toMillis.millis
+      val timeout = 300.millis
 
       "with simple flow" should {
 
