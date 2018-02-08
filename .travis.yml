@@ -15,3 +15,11 @@ cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: sbt ++$TRAVIS_SCALA_VERSION publish
+  on:
+    tags: true
+    condition: $AKKA_SERIES = 2.5
