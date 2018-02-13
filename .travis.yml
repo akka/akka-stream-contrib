@@ -4,10 +4,6 @@ scala:
   - "2.11.11"
   - "2.12.2"
 
-env:
-  - AKKA_SERIES=2.4
-  - AKKA_SERIES=2.5
-
 jdk:
   - oraclejdk8
 
@@ -25,6 +21,9 @@ deploy:
     condition: $AKKA_SERIES = 2.5
 
 env:
+  matrix:
+    - AKKA_SERIES=2.4
+    - AKKA_SERIES=2.5
   global:
     - BINTRAY_USER=raboofje
     # travis encrypt BINTRAY_PASS=
