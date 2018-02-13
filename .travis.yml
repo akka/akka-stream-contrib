@@ -15,3 +15,20 @@ cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: sbt ++$TRAVIS_SCALA_VERSION publish bintraySyncMavenCentral
+  on:
+    tags: true
+    condition: $AKKA_SERIES = 2.5
+
+env:
+  global:
+    - BINTRAY_USER=raboofje
+    # travis encrypt BINTRAY_PASS=
+    - secure: "hpIvM0vTWICCbGnZjks8/jGbXLy2G5Kbg5d2KhxF8GZGasR/inljkfhEfHXluc01UNFgdb4Xu57tg3nN1y7TpgHLotkIzTnsuJUdhAMNcse/Mw2UljgyhVKuEksj/J+iz8bKcAjAbiG3npLA2OMNhNRS6juI8O4B14IFkX0He2HgxVd3xEXH5/MKWnsQwHgXj8+gVp8R1y/FsIV/HrlNmV7ZKrNt+667rkaO2eDoPvx7+bDg0OVJAHZk4Mfvq/GnuWK1v0+rIk10ryggMTgMGECvQeKPVWhhL4E5Ckj+ZyAQF60/Qf79a0uFqxr1cjw1zNqZN0jsRbEGLYU0IZq1yvKh3RN54ahyiFp1wbNmOH7tM0+iaJFoKFHrLQ8VVSqKaz5kNlDj8CuMlSqsAyCPWUJCbHGXOMvoZIXH+u+kAUGxhYVvXDJuf+g7HVBMNEfXJU0KvTQn2eH1xLZu6eAZbrR/0mkYRM4UBEbS0ody8g/dxEN+aCylVA0/cr0ty2ifsNLRMtlRXsA4Vl0jiIyp06BtRoWUSI990++o/O4XxDSymq6CJD+p3epSoIZ2gGpbRAYmgJV7g2QBGkNlhCGlk1QnoUkDPqWqhFDI7eqDIlz/FKDc4BHb2pX6Gat99t0013Owa3+8iW9Y7xD0ITFriBKiSdhUvuqUrZOgpy76eC4="
+    - SONA_USER=raboof
+    # travis encrypt SONA_PASS=
+    - secure: "Mbh07OSHp6uDBVXp6Y7T4QV7D04Nrl+MxwrL5pN/jsMJeqWt1VCrYhJPTMlory3eiaI8pEfl5jS5nMGiqj+8IZhJJMJS/wDPgaC2lhQAdqtXXZk4pj+vlGXnkvnOwWE16OMkOAdXqxTFA+U2WUD6UsEdt4nI5TAtTc1YXgqU8PLehb1e4uLqnZcmSzaH84tX0qAhNh9+1VlNwIEco+RgkUJLBAq6wkGB30hYfxrurAZZEI3cmLszlTaRNxMX+RUgjses5JVAj3diLktZPm3opwGh85SQsN88zYWjQsRo+uraqO7MJZ3RX6PgxXMr1IHrNFTqpGgm6/2rTO9+WIizuk3UDrd3nnbZWXpYGIDqg66vBIyv6fqnYqyOrD8Z3sedXWRuQKHuvLcHHIckEjd9HIGXB3sIKqAQBB8IKgvKY26it+2Mr6yhJkpdKlFX0GsL6cxZL4nqqS8d4iLdKjXDFN/gjc7xapD9i0yJ1Xa3raxKpU4qjS226EuRSxzDOv/ycRyMeMf0Bcr6sdhfXPVQCB0GeqnvEvh+JwjSLMhaUodFR3rcTsWYSJ0vfX/2LnDtpkkTHaT2j4mWB33U6GQ8PvkbFhdNHQUmFTRaLvpRd+CmgMpGs6b33/mW15Sy4q+xTJFm65b6tLwdIhO/3POX/d94SzBjzrB8mMTJ77QwZ3Y="
