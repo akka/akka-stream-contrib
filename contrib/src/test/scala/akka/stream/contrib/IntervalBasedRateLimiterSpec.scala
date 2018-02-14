@@ -127,7 +127,7 @@ trait IntervalBasedThrottlerTestKit extends BaseStreamSpec {
     }
 
     batches.flatten should contain theSameElementsInOrderAs (1 to numOfElements).inclusive
-    batches.size shouldBe (numOfElements / maxBatchSize)
+    batches.size should (be(numOfElements / maxBatchSize) or be(numOfElements / maxBatchSize + 1))
   }
 
   protected def infiniteSource: Source[Int, NotUsed] = Source(Stream.from(1, 1))
