@@ -1,7 +1,12 @@
-Akka Stream Contrib
+Akka Stream Contrib [![scaladex-badge][]][scaladex] [![travis-badge][]][travis] [![gitter-badge][]][gitter]
 ===================
 
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/akka/akka?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Latest version](https://index.scala-lang.org/akka/akka-stream-contrib/akka-stream-contrib/latest.svg)](https://index.scala-lang.org/akka/akka-stream-contrib/akka-stream-contrib) [![Build Status](https://travis-ci.org/akka/akka-stream-contrib.svg?branch=master)](https://travis-ci.org/akka/akka-stream-contrib)
+[scaladex]:       https://index.scala-lang.org/akka/akka-stream-contrib
+[scaladex-badge]: https://index.scala-lang.org/akka/akka-stream-contrib/latest.svg
+[travis]:                https://travis-ci.org/akka/akka-stream-contrib
+[travis-badge]:          https://travis-ci.org/akka/akka-stream-contrib.svg?branch=master
+[gitter]:                    https://gitter.im/akka/akka
+[gitter-badge]:       https://badges.gitter.im/akka/akka.svg
 
 See the [Release page](https://github.com/akka/akka-stream-contrib/releases) for sbt links and release notes.
 
