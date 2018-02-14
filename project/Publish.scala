@@ -7,6 +7,7 @@ import sbt._
 import sbt.Keys._
 import java.io.File
 import com.typesafe.sbt.pgp.PgpKeys
+import com.typesafe.sbt.SbtPgp.autoImportImpl.pgpPassphrase
 
 object Publish extends AutoPlugin {
 
@@ -20,6 +21,7 @@ object Publish extends AutoPlugin {
     pomExtra := akkaPomExtra,
     publishTo := akkaPublishTo.value,
     credentials ++= akkaCredentials,
+    pgpPassphrase := sys.env.get("PGP_PASS").map(_.toCharArray),
     organizationName := "Lightbend Inc.",
     organizationHomepage := Some(url("http://www.lightbend.com")),
     homepage := Some(url("https://github.com/akka/akka-stream-contrib")),
