@@ -6,9 +6,11 @@ package akka.stream.contrib
 import akka.stream._
 import akka.stream.scaladsl._
 import akka.stream.stage._
-import scala.util.{ Try, Success, Failure }
-import scala.concurrent.Future
+import com.typesafe.config.ConfigFactory
+
 import scala.collection.immutable
+import scala.concurrent.duration.Duration
+import scala.util.{Success, Try}
 
 /**
  * This object defines methods for retry operations.
@@ -57,14 +59,18 @@ object Retry {
    * Passing `Some(Nil)` is valid, and will result in filtering out the failure quietly, without
    * emitting a failed `Try` element.
    *
+   * In case of `Failure` element in the flow, the elements created from `retryWith` function are handled
+   * before pulling new elements from upstream.
+   *
    * IMPORTANT CAVEAT:
    * The given flow must not change the number of elements passing through it (i.e. it should output
    * exactly one element for every received element). Ignoring this, will have an unpredicted result,
    * and may result in a deadlock.
    *
-   * @param limit since every retry can generate more elements,
+   * @param retriesLimit since every retry can generate more elements,
    *        the inner queue can get too big. if the limit is reached,
    *        the stage will fail.
+   * @param bufferLimit max number of concurrent elements that can be processed at a time.
    * @param flow the flow to retry
    * @param retryWith if output was failure, we can optionaly recover from it,
    *        and retry with a sequence of input & new state pairs we get from this function.
@@ -73,11 +79,12 @@ object Retry {
    * @tparam S state to create a new `(I,S)` to retry with
    * @tparam M materialized value type
    */
-  def concat[I, O, S, M](limit: Long, flow: Graph[FlowShape[(I, S), (Try[O], S)], M])(retryWith: S => Option[immutable.Iterable[(I, S)]]): Graph[FlowShape[(I, S), (Try[O], S)], M] = {
+  def concat[I, O, S, M](retriesLimit: Long, bufferLimit: Long, flow: Graph[FlowShape[(I, S), (Try[O], S)], M])
+                        (retryWith: S => Option[immutable.Iterable[(I, S)]]): Graph[FlowShape[(I, S), (Try[O], S)], M] = {
     GraphDSL.create(flow) { implicit b => origFlow =>
       import GraphDSL.Implicits._
 
-      val retry = b.add(new RetryConcatCoordinator[I, S, O](limit, retryWith))
+      val retry = b.add(new RetryConcatCoordinator[I, S, O](retriesLimit, bufferLimit, retryWith))
 
       retry.out2 ~> origFlow ~> retry.in2
 
@@ -158,64 +165,62 @@ object Retry {
     }
   }
 
-  private[akka] class RetryConcatCoordinator[I, S, O](limit: Long, retryWith: S => Option[immutable.Iterable[(I, S)]]) extends GraphStage[BidiShape[(I, S), (Try[O], S), (Try[O], S), (I, S)]] {
+  private[akka] class RetryConcatCoordinator[I, S, O](retriesLimit: Long, bufferLimit: Long, retryWith: S => Option[immutable.Iterable[(I, S)]]) extends GraphStage[BidiShape[(I, S), (Try[O], S), (Try[O], S), (I, S)]] {
     val in1 = Inlet[(I, S)]("RetryConcat.ext.in")
     val out1 = Outlet[(Try[O], S)]("RetryConcat.ext.out")
     val in2 = Inlet[(Try[O], S)]("RetryConcat.int.in")
     val out2 = Outlet[(I, S)]("RetryConcat.int.out")
     override val shape = BidiShape[(I, S), (Try[O], S), (Try[O], S), (I, S)](in1, out1, in2, out2)
+
     override def createLogic(attributes: Attributes) = new GraphStageLogic(shape) {
-      var elementInCycle = false
-      val queue = scala.collection.mutable.Queue.empty[(I, S)]
+      var numElementsInCycle = 0
+      val queueRetries = scala.collection.mutable.Queue.empty[(I, S)]
+      val queueOut1 = scala.collection.mutable.Queue.empty[(Try[O], S)]
+      lazy val timeout = Duration.fromNanos(ConfigFactory.load().getDuration("akka.stream.contrib.retry-timeout").toNanos)
 
       setHandler(in1, new InHandler {
         override def onPush() = {
           val is = grab(in1)
-          if (!hasBeenPulled(in2)) pull(in2)
           if (isAvailable(out2)) {
             push(out2, is)
-            elementInCycle = true
-          } else queue.enqueue(is)
+            numElementsInCycle += 1
+          } else queueRetries.enqueue(is)
         }
 
         override def onUpstreamFinish() = {
-          if (!elementInCycle && queue.isEmpty)
-            completeStage()
+          if (numElementsInCycle == 0 && queueRetries.isEmpty) {
+            if (queueOut1.isEmpty) completeStage()
+            else emitMultiple(out1, queueOut1.iterator, () => completeStage())
+          }
         }
       })
 
       setHandler(out1, new OutHandler {
         override def onPull() = {
-          if (queue.isEmpty) {
-            if (isAvailable(out2)) pull(in1)
-            else pull(in2)
-          } else {
-            pull(in2)
-            if (isAvailable(out2)) {
-              push(out2, queue.dequeue())
-              elementInCycle = true
-            }
-          }
+          // prioritize pushing queued element if available
+          if (queueOut1.isEmpty) pull(in2)
+          else push(out1, queueOut1.dequeue())
         }
       })
 
       setHandler(in2, new InHandler {
         override def onPush() = {
-          elementInCycle = false
+          numElementsInCycle -= 1
           grab(in2) match {
             case s @ (_: Success[O], _) => pushAndCompleteIfLast(s)
             case failure @ (_, s) => retryWith(s).fold(pushAndCompleteIfLast(failure)) { xs =>
-              if (xs.size + queue.size > limit) failStage(new IllegalStateException(s"Queue limit of $limit has been exceeded. Trying to append ${xs.size} elements to a queue that has ${queue.size} elements."))
+              if (xs.size + queueRetries.size > retriesLimit) failStage(new IllegalStateException(s"Queue limit of $retriesLimit has been exceeded. Trying to append ${xs.size} elements to a queue that has ${queueRetries.size} elements."))
               else {
-                xs.foreach(queue.enqueue(_))
-                if (queue.isEmpty) {
-                  if (isClosed(in1)) completeStage()
-                  else pull(in1)
+                xs.foreach(queueRetries.enqueue(_))
+                if (queueRetries.isEmpty) {
+                  if (isClosed(in1) && queueOut1.isEmpty) completeStage()
+                  else pull(in2)
                 } else {
                   pull(in2)
                   if (isAvailable(out2)) {
-                    push(out2, queue.dequeue())
-                    elementInCycle = true
+                    val elem = queueRetries.dequeue()
+                    push(out2, elem)
+                    numElementsInCycle += 1
                   }
                 }
               }
@@ -225,27 +230,44 @@ object Retry {
       })
 
       def pushAndCompleteIfLast(elem: (Try[O], S)): Unit = {
-        push(out1, elem)
-        if (isClosed(in1) && queue.isEmpty)
+        if (isAvailable(out1) && queueOut1.isEmpty) {
+          push(out1, elem)
+        } else if (queueOut1.size + 1 > bufferLimit) {
+          failStage(new IllegalStateException(s"Buffer limit of $bufferLimit has been exceeded. Trying to append 1 element to a buffer that has ${queueOut1.size} elements."))
+        } else {
+          queueOut1.enqueue(elem)
+        }
+
+        if (isClosed(in1) && queueRetries.isEmpty && numElementsInCycle == 0 && queueOut1.isEmpty) {
           completeStage()
+        }
       }
 
       setHandler(out2, new OutHandler {
         override def onPull() = {
-          if (!elementInCycle && isAvailable(out1)) {
-            if (queue.isEmpty) pull(in1)
-            else {
-              push(out2, queue.dequeue())
-              elementInCycle = true
-              if (!hasBeenPulled(in2)) pull(in2)
+          if (queueRetries.isEmpty) {
+            if (!hasBeenPulled(in1) && !isClosed(in1)) {
+              pull(in1)
             }
+          } else {
+            push(out2, queueRetries.dequeue())
+            numElementsInCycle += 1
           }
         }
 
         override def onDownstreamFinish() = {
-          //Do Nothing, intercept completion as downstream
+          materializer.scheduleOnce(timeout, new Runnable {
+            override def run() = {
+              getAsyncCallback[Unit] { _ =>
+                if (!isClosed(in2)) {
+                  failStage(new IllegalStateException(s"inner flow canceled only upstream, while downstream remain available for $timeout"))
+                }
+              }.invoke(())
+            }
+          })
         }
       })
     }
   }
+
 }
