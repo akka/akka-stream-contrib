@@ -139,10 +139,3 @@ that automatically merges the code, builds it, runs the tests and comments on th
 ## Source style
 
 akka-stream-contrib uses [Scalariform](https://github.com/daniel-trinh/scalariform) to enforce some of the code style rules.
-
-## Releasing
-
-1. Create a [new release](https://github.com/akka/akka-stream-contrib/releases/new) with the next tag version (e.g. `v0.3`), title and release decsription including notable changes.
-2. Fetch tags to your local clone: `git fetch --tags`.
-3. Publish signed release: `sbt -Dpublish.maven.central=true +publishSigned`.
-4. Close and release [sonatype repository](https://oss.sonatype.org/).
