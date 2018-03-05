@@ -10,7 +10,7 @@ import com.typesafe.config.ConfigFactory
 
 import scala.collection.immutable
 import scala.concurrent.duration.Duration
-import scala.util.{Success, Try}
+import scala.util.{ Success, Try }
 
 /**
  * This object defines methods for retry operations.
@@ -79,8 +79,7 @@ object Retry {
    * @tparam S state to create a new `(I,S)` to retry with
    * @tparam M materialized value type
    */
-  def concat[I, O, S, M](retriesLimit: Long, bufferLimit: Long, flow: Graph[FlowShape[(I, S), (Try[O], S)], M])
-                        (retryWith: S => Option[immutable.Iterable[(I, S)]]): Graph[FlowShape[(I, S), (Try[O], S)], M] = {
+  def concat[I, O, S, M](retriesLimit: Long, bufferLimit: Long, flow: Graph[FlowShape[(I, S), (Try[O], S)], M])(retryWith: S => Option[immutable.Iterable[(I, S)]]): Graph[FlowShape[(I, S), (Try[O], S)], M] = {
     GraphDSL.create(flow) { implicit b => origFlow =>
       import GraphDSL.Implicits._
 

@@ -5,14 +5,11 @@ package akka.stream.contrib
 
 import akka.stream.{ Attributes, FanOutShape2 }
 import akka.stream.stage.{ GraphStage, GraphStageLogic, OutHandler }
-import com.typesafe.config.ConfigFactory
-
-import scala.concurrent.duration.Duration
+import akka.util.Timeout
 
 /** INTERNAL API */
-private[akka] abstract class UnfoldFlowGraphStageLogic[O, S, E] private[stream] (shape: FanOutShape2[O, S, E], seed: S) extends GraphStageLogic(shape) {
+private[akka] abstract class UnfoldFlowGraphStageLogic[O, S, E] private[stream] (shape: FanOutShape2[O, S, E], seed: S, timeout: Timeout) extends GraphStageLogic(shape) {
 
-  lazy val timeout = Duration.fromNanos(ConfigFactory.load().getDuration("akka.stream.contrib.unfold-flow-timeout").toNanos)
   val feedback = shape.out0
   val output = shape.out1
   val nextElem = shape.in
@@ -30,7 +27,7 @@ private[akka] abstract class UnfoldFlowGraphStageLogic[O, S, E] private[stream] 
     override def onDownstreamFinish() = {
       // Do Nothing until `timeout` to try and intercept completion as downstream,
       // but cancel stream after timeout if inlet is not closed to prevent deadlock.
-      materializer.scheduleOnce(timeout, new Runnable {
+      materializer.scheduleOnce(timeout.duration, new Runnable {
         override def run() = {
           getAsyncCallback[Unit] { _ =>
             if (!isClosed(nextElem)) {
