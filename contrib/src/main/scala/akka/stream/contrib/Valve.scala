@@ -22,10 +22,10 @@ sealed trait ValveSwitch {
   def flip(mode: SwitchMode): Future[Boolean]
 
   /**
-    * Obtain the state of the valve
-    *
-    * @return A future that completes with [[SwitchMode]] to indicate the current state of the valve
-    */
+   * Obtain the state of the valve
+   *
+   * @return A future that completes with [[SwitchMode]] to indicate the current state of the valve
+   */
   def getMode(): Future[SwitchMode]
 }
 

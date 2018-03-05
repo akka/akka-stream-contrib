@@ -7,6 +7,7 @@ import sbt._
 import sbt.Keys._
 import java.io.File
 import com.typesafe.sbt.pgp.PgpKeys
+import com.typesafe.sbt.SbtPgp.autoImportImpl.pgpPassphrase
 
 object Publish extends AutoPlugin {
 
@@ -20,6 +21,7 @@ object Publish extends AutoPlugin {
     pomExtra := akkaPomExtra,
     publishTo := akkaPublishTo.value,
     credentials ++= akkaCredentials,
+    pgpPassphrase := sys.env.get("PGP_PASS").map(_.toCharArray),
     organizationName := "Lightbend Inc.",
     organizationHomepage := Some(url("http://www.lightbend.com")),
     homepage := Some(url("https://github.com/akka/akka-stream-contrib")),
@@ -58,6 +60,13 @@ object Publish extends AutoPlugin {
     Some(Resolver.file("Default Local Repository", repository))
 
   private def akkaCredentials: Seq[Credentials] =
-    Option(System.getProperty("akka.publish.credentials", null)).map(f => Credentials(new File(f))).toSeq
-
+    Option(System.getProperty("akka.publish.credentials", null))
+      .map(f => Credentials(new File(f)))
+      .orElse(for {
+        user <- sys.env.get("SONA_USER")
+        pass <- sys.env.get("SONA_PASS")
+      } yield {
+        Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", user, pass)
+      })
+      .toSeq
 }
