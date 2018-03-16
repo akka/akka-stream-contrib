@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
-
 package akka.stream.contrib
 
 import org.scalatest.concurrent.ScalaFutures
