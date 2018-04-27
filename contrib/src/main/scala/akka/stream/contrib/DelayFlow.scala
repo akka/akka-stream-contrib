@@ -17,7 +17,11 @@ object DelayFlow {
    * Flow with fixed delay for each element.
    * @param fixedDelay value of the delay
    */
-  def apply[T](fixedDelay: FiniteDuration): Flow[T, T, NotUsed] = DelayFlow[T](() => DelayStrategy.fixedDelay(fixedDelay))
+  def apply[T](fixedDelay: FiniteDuration): Flow[T, T, NotUsed] =
+    if (fixedDelay <= Duration.Zero)
+      Flow[T]
+    else
+      DelayFlow[T](() => DelayStrategy.fixedDelay(fixedDelay))
 
   /**
    * Flow for universal delay management, allows to manage delay through [[DelayStrategy]].
@@ -136,7 +140,7 @@ final class DelayFlow[T](strategySupplier: () => DelayStrategy[_ >: T]) extends 
     override def onPush(): Unit = {
       val elem = grab(in)
       val delay = strategy.nextDelay(elem)
-      if (delay == Duration.Zero) {
+      if (delay <= Duration.Zero) {
         push(out, elem)
       } else {
         delayedElem = elem.asInstanceOf[AnyRef]
