@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
+
 package akka.stream.contrib
 
 import akka.stream.scaladsl.{ Sink, Source }
@@ -30,8 +31,7 @@ class KeepAliveConcatSpec extends BaseStreamSpec {
           .via(KeepAliveConcat(5, 1.second, expand))
           .grouped(1000)
           .runWith(Sink.head),
-        3.seconds
-      ).flatten should ===(1 to 10)
+        3.seconds).flatten should ===(1 to 10)
     }
 
     "emit elements periodically after silent periods" in {
@@ -43,8 +43,7 @@ class KeepAliveConcatSpec extends BaseStreamSpec {
           .via(KeepAliveConcat(5, 0.6.seconds, expand))
           .grouped(1000)
           .runWith(Sink.head),
-        3.seconds
-      ).flatten should ===(1 to 10)
+        3.seconds).flatten should ===(1 to 10)
     }
 
     "immediately pull upstream" in {

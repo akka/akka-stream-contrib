@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
+
 package akka.stream.contrib
 
 import akka.actor.ActorRef
@@ -34,8 +35,7 @@ object TestKit {
             children = probe.expectMsgType[StreamSupervisor.Children].children
             assert(
               children.isEmpty,
-              s"expected no StreamSupervisor children, but got [${children.mkString(", ")}]"
-            )
+              s"expected no StreamSupervisor children, but got [${children.mkString(", ")}]")
           }
           catch {
             case ex: Throwable ⇒
