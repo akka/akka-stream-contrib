@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
+
 package akka.stream.contrib
 
 import java.util.concurrent.ThreadFactory
@@ -27,8 +28,7 @@ trait TimeWindowSpec extends BaseStreamSpec {
   override def config = ConfigFactory.parseString(
     s"""
       |akka.scheduler.implementation = ${classOf[AkkaMockScheduler].getName}
-    """.stripMargin
-  )
+    """.stripMargin)
 
   private val timeWindow = 100.millis
   private val epsilonTime = 10.millis

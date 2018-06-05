@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
+
 package akka.stream.contrib
 
 import java.util.zip.{ ZipEntry, ZipInputStream }
@@ -48,8 +49,7 @@ object ZipInputStreamSource {
   def apply(
     in:                   () => ZipInputStream,
     chunkSize:            Int                   = DefaultChunkSize,
-    allowedZipExtensions: immutable.Seq[String] = DefaultAllowedZipExtensions
-  ): Source[(ZipEntryData, ByteString), Future[Long]] =
+    allowedZipExtensions: immutable.Seq[String] = DefaultAllowedZipExtensions): Source[(ZipEntryData, ByteString), Future[Long]] =
     Source.fromGraph(new ZipInputStreamSource(in, chunkSize, allowedZipExtensions))
       .withAttributes(name("zipInputStreamSource") and IODispatcher)
 
@@ -66,8 +66,7 @@ object ZipInputStreamSource {
   def create(
     in:                   Function0[ZipInputStream],
     chunkSize:            Int                       = DefaultChunkSize,
-    allowedZipExtensions: immutable.Seq[String]     = DefaultAllowedZipExtensions
-  ): Source[(ZipEntryData, ByteString), Future[Long]] =
+    allowedZipExtensions: immutable.Seq[String]     = DefaultAllowedZipExtensions): Source[(ZipEntryData, ByteString), Future[Long]] =
     Source.fromGraph(new ZipInputStreamSource(in, chunkSize, allowedZipExtensions))
       .withAttributes(name("zipInputStreamSource") and IODispatcher)
 }
@@ -86,8 +85,7 @@ object ZipInputStreamSource {
 final class ZipInputStreamSource private (
   in:                   () => ZipInputStream,
   chunkSize:            Int                   = DefaultChunkSize,
-  allowedZipExtensions: immutable.Seq[String] = DefaultAllowedZipExtensions
-) extends GraphStageWithMaterializedValue[SourceShape[(ZipEntryData, ByteString)], Future[Long]] {
+  allowedZipExtensions: immutable.Seq[String] = DefaultAllowedZipExtensions) extends GraphStageWithMaterializedValue[SourceShape[(ZipEntryData, ByteString)], Future[Long]] {
 
   val matValue = Promise[Long]()
 
@@ -161,8 +159,7 @@ final class ZipInputStreamSource private (
       }) // end of handler
 
       @tailrec private def nextEntry(
-        streams: Seq[ZipInputStream]
-      ): (Option[ZipEntry], Seq[ZipInputStream]) = streams match {
+        streams: Seq[ZipInputStream]): (Option[ZipEntry], Seq[ZipInputStream]) = streams match {
         case Seq() => (None, streams)
         case (z :: zs) =>
           val entry = Option(z.getNextEntry)

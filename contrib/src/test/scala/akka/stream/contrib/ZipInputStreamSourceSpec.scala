@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
+
 package akka.stream.contrib
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
@@ -70,8 +71,7 @@ trait ZipInputStreamSourceSpec extends BaseStreamSpec {
   private def sampleZipFile(
     numFiles:    Int,
     sizePerFile: Int = 1024,
-    dirRatio:    Int = 4
-  ): ByteArrayInputStream = {
+    dirRatio:    Int = 4): ByteArrayInputStream = {
     withZos { zos =>
       (1 to numFiles).foreach(i1 => {
         val dirName = if (i1 > dirRatio) s"directory_${i1 / dirRatio}/" else ""
@@ -123,7 +123,6 @@ trait ZipInputStreamSourceSpec extends BaseStreamSpec {
          |porttitor ornare. Cras lorem nisl, sollicitudin vitae odio at, vehicula maximus
          |mauris. Sed ac purus ac turpis pellentesque cursus ac eget est. Pellentesque
          |habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
-         |""".stripMargin.toCharArray.map(_.toByte)
-    ) #::: loremIpsum
+         |""".stripMargin.toCharArray.map(_.toByte)) #::: loremIpsum
 
 }

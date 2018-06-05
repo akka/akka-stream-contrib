@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
+
 package akka.stream.contrib
 
 import akka.stream._
@@ -88,8 +89,7 @@ object SourceGen {
   /** INTERNAL API */
   private[akka] def unfoldFlowGraph[E, S, O, M](
     fanOut2Stage: GraphStage[FanOutShape2[O, S, E]],
-    flow:         Graph[FlowShape[S, O], M]
-  ): Source[E, M] = Source.fromGraph(GraphDSL.create(flow) {
+    flow:         Graph[FlowShape[S, O], M]): Source[E, M] = Source.fromGraph(GraphDSL.create(flow) {
     implicit b =>
       {
         f =>

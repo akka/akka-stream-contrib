@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
+
 /**
  * Copyright (C) 2009-2016 Lightbend Inc. <http://www.lightbend.com>
  */
@@ -13,7 +14,7 @@ import java.util.concurrent.{ TimeoutException, CountDownLatch }
 import scala.concurrent.{ Promise, Awaitable, CanAwait, Await }
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
-import akka.testkit.{ TestKit, TestDuration }
+import akka.testkit.{ TestKit => AkkaTestKit, TestDuration }
 
 /**
  * The Coroner can be used to print a diagnostic report of the JVM state,
@@ -142,8 +143,7 @@ object Coroner { // FIXME: remove once going back to project dependencies
     def dumpAllThreads: Seq[ThreadInfo] = {
       threadMx.dumpAllThreads(
         threadMx.isObjectMonitorUsageSupported,
-        threadMx.isSynchronizerUsageSupported
-      )
+        threadMx.isSynchronizerUsageSupported)
     }
 
     def findDeadlockedThreads: (Seq[ThreadInfo], String) = {
@@ -251,7 +251,7 @@ object Coroner { // FIXME: remove once going back to project dependencies
  * counts during start and stop.
  */
 trait WatchedByCoroner {
-  self: TestKit ⇒
+  self: AkkaTestKit ⇒
 
   @volatile private var coronerWatch: Coroner.WatchHandle = _
 

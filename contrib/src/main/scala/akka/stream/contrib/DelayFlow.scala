@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
  */
+
 package akka.stream.contrib
 
 import akka.NotUsed
@@ -73,8 +74,7 @@ object DelayFlow {
       increaseStep:  FiniteDuration,
       needsIncrease: T => Boolean,
       initialDelay:  FiniteDuration = Duration.Zero,
-      maxDelay:      Duration       = Duration.Inf
-    ): DelayStrategy[T] = {
+      maxDelay:      Duration       = Duration.Inf): DelayStrategy[T] = {
       require(increaseStep > Duration.Zero, "Increase step must be positive")
       require(maxDelay > initialDelay, "Max delay must be bigger than initial delay")
 
