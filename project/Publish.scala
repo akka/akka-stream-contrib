@@ -8,6 +8,7 @@ import sbt.Keys._
 import java.io.File
 import com.typesafe.sbt.pgp.PgpKeys
 import com.typesafe.sbt.SbtPgp.autoImportImpl.pgpPassphrase
+import sbtdynver.DynVerPlugin.autoImport._
 
 object Publish extends AutoPlugin {
 
@@ -27,7 +28,8 @@ object Publish extends AutoPlugin {
     homepage := Some(url("https://github.com/akka/akka-stream-contrib")),
     publishMavenStyle := true,
     pomIncludeRepository := { x => false },
-    defaultPublishTo := crossTarget.value / "repository"
+    defaultPublishTo := crossTarget.value / "repository",
+    ThisBuild / dynverSonatypeSnapshots := true,
   )
 
   def akkaPomExtra = {
@@ -46,13 +48,13 @@ object Publish extends AutoPlugin {
   }
 
   private def akkaPublishTo = Def.setting {
-    sonatypeRepo(version.value) orElse localRepo(defaultPublishTo.value)
+    sonatypeRepo(isSnapshot.value) orElse localRepo(defaultPublishTo.value)
   }
 
-  private def sonatypeRepo(version: String): Option[Resolver] =
+  private def sonatypeRepo(isSnapshot: Boolean): Option[Resolver] =
     Option(sys.props("publish.maven.central")) filter (_.toLowerCase == "true") map { _ =>
       val nexus = "https://oss.sonatype.org/"
-      if (version endsWith "-SNAPSHOT") "snapshots" at nexus + "content/repositories/snapshots"
+      if (isSnapshot) "snapshots" at nexus + "content/repositories/snapshots"
       else "releases" at nexus + "service/local/staging/deploy/maven2"
     }
 
