@@ -17,7 +17,7 @@ class RetrySpecAutoFusingOff extends { val autoFusing = false } with RetrySpec
 trait RetrySpec extends BaseStreamSpec {
 
   val failedElem: Try[Int] = Failure(new Exception("cooked failure"))
-  def flow[T] = Flow[(Int, T)].map {
+  def flow[T] = Flow.fromFunction[(Int, T), (Try[Int], T)] {
     case (i, j) if i % 2 == 0 => (failedElem, j)
     case (i, j)               => (Success(i + 1), j)
   }
@@ -185,6 +185,58 @@ trait RetrySpec extends BaseStreamSpec {
 
       killSwitch.abort(failedElem.failed.get)
       sink.request(1)
+      sink.expectError(failedElem.failed.get)
+    }
+
+    val alwaysFailingFlow = Flow.fromFunction[(Int, Int), (Try[Int], Int)] {
+      case (i, j) => (failedElem, j)
+    }
+
+    val alwaysRecoveringFunc: Int => Option[(Int, Int)] = i => Some(i -> i)
+
+    val stuckForeverRetrying = Retry(alwaysFailingFlow)(alwaysRecoveringFunc)
+
+    "tolerate killswitch terminations before the flow while on fail spin" in {
+      val ((source, killSwitch), sink) = TestSource.probe[Int]
+        .viaMat(KillSwitches.single[Int])(Keep.both)
+        .map(i => (i, i))
+        .via(stuckForeverRetrying)
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      sink.request(99)
+      source.sendNext(1)
+      sink.expectNoMsg()
+      killSwitch.abort(failedElem.failed.get)
+      sink.expectError(failedElem.failed.get)
+    }
+
+    "tolerate killswitch terminations inside the flow while on fail spin" in {
+      val ((source, killSwitch), sink) = TestSource.probe[Int]
+        .map(i => (i, i))
+        .viaMat(Retry(alwaysFailingFlow.viaMat(KillSwitches.single[(Try[Int], Int)])(Keep.right))(alwaysRecoveringFunc))(Keep.both)
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      sink.request(99)
+      source.sendNext(1)
+      sink.expectNoMsg()
+      killSwitch.abort(failedElem.failed.get)
+      sink.expectError(failedElem.failed.get)
+    }
+
+    "tolerate killswitch terminations after the flow while on fail spin" in {
+      val ((source, killSwitch), sink) = TestSource.probe[Int]
+        .map(i => (i, i))
+        .via(stuckForeverRetrying)
+        .viaMat(KillSwitches.single[(Try[Int], Int)])(Keep.both)
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      sink.request(99)
+      source.sendNext(1)
+      sink.expectNoMsg()
+      killSwitch.abort(failedElem.failed.get)
       sink.expectError(failedElem.failed.get)
     }
   }
@@ -357,6 +409,58 @@ trait RetrySpec extends BaseStreamSpec {
 
       killSwitch.abort(failedElem.failed.get)
       sink.request(1)
+      sink.expectError(failedElem.failed.get)
+    }
+
+    val alwaysFailingFlow = Flow.fromFunction[(Int, Int), (Try[Int], Int)] {
+      case (i, j) => (failedElem, j)
+    }
+
+    val alwaysRecoveringFunc: Int => Option[List[(Int, Int)]] = i => Some(List(i -> i))
+
+    val stuckForeverRetrying = Retry.concat(Long.MaxValue, Long.MaxValue, alwaysFailingFlow)(alwaysRecoveringFunc)
+
+    "tolerate killswitch terminations before the flow while on fail spin" in {
+      val ((source, killSwitch), sink) = TestSource.probe[Int]
+        .viaMat(KillSwitches.single[Int])(Keep.both)
+        .map(i => (i, i))
+        .via(stuckForeverRetrying)
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      sink.request(99)
+      source.sendNext(1)
+      sink.expectNoMsg()
+      killSwitch.abort(failedElem.failed.get)
+      sink.expectError(failedElem.failed.get)
+    }
+
+    "tolerate killswitch terminations inside the flow while on fail spin" in {
+      val ((source, killSwitch), sink) = TestSource.probe[Int]
+        .map(i => (i, i))
+        .viaMat(Retry.concat(Long.MaxValue, Long.MaxValue, alwaysFailingFlow.viaMat(KillSwitches.single[(Try[Int], Int)])(Keep.right))(alwaysRecoveringFunc))(Keep.both)
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      sink.request(99)
+      source.sendNext(1)
+      sink.expectNoMsg()
+      killSwitch.abort(failedElem.failed.get)
+      sink.expectError(failedElem.failed.get)
+    }
+
+    "tolerate killswitch terminations after the flow while on fail spin" in {
+      val ((source, killSwitch), sink) = TestSource.probe[Int]
+        .map(i => (i, i))
+        .via(stuckForeverRetrying)
+        .viaMat(KillSwitches.single[(Try[Int], Int)])(Keep.both)
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      sink.request(99)
+      source.sendNext(1)
+      sink.expectNoMsg()
+      killSwitch.abort(failedElem.failed.get)
       sink.expectError(failedElem.failed.get)
     }
 
