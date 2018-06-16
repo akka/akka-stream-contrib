@@ -31,7 +31,10 @@ import static java.nio.file.StandardWatchEventKinds.*;
  * Watches a file system directory and streams change events from it.
  *
  * Note that the JDK watcher is notoriously slow on some platform (up to 1s after event actually happened on OSX for example)
+ *
+ * @deprecated since 0.10, use Alpakka's implementation instead https://developer.lightbend.com/docs/alpakka/current/file.html#listing-directory-contents
  */
+@Deprecated
 public final class DirectoryChanges extends GraphStage<SourceShape<Pair<Path, DirectoryChanges.Change>>> {
 
   public enum Change {
