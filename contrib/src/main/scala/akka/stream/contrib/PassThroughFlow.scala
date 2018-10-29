@@ -16,6 +16,15 @@ import akka.stream.scaladsl._
  * Has an overloaded factory that fixes `f` to be a tuple constructor, i.e.
  * for every element `e` signalled from upstream, emits a tuple `(e, flow(e))`.
  *
+ * IMPORTANT!
+ * This flow combinator is guaranteed to work correctly on flows
+ * that have behavior of classic functions, meaning that
+ * they should not reorder, drop, inject etc new elements.
+ * In the future these restrictions may be lifted,
+ * for now please refer to the following resources for more:
+ * - [[https://github.com/akka/akka-stream-contrib/pull/142#discussion_r228875614]]
+ * - [[https://github.com/akka/akka/issues/15957]] and linked issues
+ * - [[https://discuss.lightbend.com/t/passing-stream-elements-into-and-over-flow/2536]] and linked resources
  *
  * Applies no internal buffering / flow control etc.
  *
