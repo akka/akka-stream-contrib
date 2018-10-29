@@ -6,36 +6,35 @@ package akka.stream.contrib
 
 import java.util.concurrent.atomic.AtomicBoolean
 import akka.actor.Cancellable
-import akka.stream.{Attributes, scaladsl}
+import akka.stream.{ Attributes, scaladsl }
 import akka.stream.impl.Unfold
 import akka.stream.scaladsl.Source
 
-
 /**
-  * Create a `Source` that will output elements of type `A`
-  * given a by-name "producer"
-  *
-  * Examples:
-  *
-  * stream of current times:
-  *
-  * {{{
-  *   SourceRepeatEval(System.currentTimeMillis)
-  * }}}
-  *
-  * stream of random numbers:
-  *
-  * {{{
-  *   SourceRepeatEval(Random.nextInt)
-  * }}}
-  *
-  * Behavior is the same as in
-  * {{{
-  *   Source.repeat(()).map(_ => x)
-  * }}}
-  *
-  * Supports cancellation via materialized `Cancellable`.
-  */
+ * Create a `Source` that will output elements of type `A`
+ * given a by-name "producer"
+ *
+ * Examples:
+ *
+ * stream of current times:
+ *
+ * {{{
+ *   SourceRepeatEval(System.currentTimeMillis)
+ * }}}
+ *
+ * stream of random numbers:
+ *
+ * {{{
+ *   SourceRepeatEval(Random.nextInt)
+ * }}}
+ *
+ * Behavior is the same as in
+ * {{{
+ *   Source.repeat(()).map(_ => x)
+ * }}}
+ *
+ * Supports cancellation via materialized `Cancellable`.
+ */
 object SourceRepeatEval {
   def apply[A](genElement: () => A): Source[A, Cancellable] = {
     val c: Cancellable = new Cancellable {
