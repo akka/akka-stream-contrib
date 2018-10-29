@@ -65,6 +65,7 @@ import akka.stream.scaladsl._
  *     if (userAgent(r) != "google-bot") {
  *       logRequest(r)
  *     }
+ *     r
  *   }
  *   .via(PassThroughFlow(route)) // req => (req, resp)
  *   .map { case (req, resp) =>
@@ -72,6 +73,7 @@ import akka.stream.scaladsl._
  *     if (userAgent(req) != "google-bot") {
  *       logResponse(resp)
  *     }
+ *     resp
  *   }
  *  }}}
  */
