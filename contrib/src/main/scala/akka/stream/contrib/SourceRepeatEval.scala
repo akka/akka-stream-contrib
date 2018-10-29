@@ -37,14 +37,12 @@ import akka.stream.scaladsl.Source
   * Supports cancellation via materialized `Cancellable`.
   */
 object SourceRepeatEval {
-  def apply[A](element: => A): Source[A, Cancellable] = {
+  def apply[A](genElement: () => A): Source[A, Cancellable] = {
     val c: Cancellable = new Cancellable {
       private val stopped: AtomicBoolean = new AtomicBoolean(false)
       override def cancel(): Boolean = stopped.compareAndSet(false, true)
       override def isCancelled: Boolean = stopped.get()
     }
-
-    def nextElement(): A = element
 
     def nextStep: Unit => Option[(Unit, A)] = {
       _ =>
@@ -52,7 +50,7 @@ object SourceRepeatEval {
           if (c.isCancelled) {
             None
           } else {
-            Some(() -> nextElement())
+            Some(() -> genElement())
           }
         }
     }
