@@ -19,7 +19,8 @@ import akka.stream.scaladsl._
  * IMPORTANT!
  * This flow combinator is guaranteed to work correctly on flows
  * that have behavior of classic total functions, meaning that
- * they should not reorder, drop, inject etc new elements.
+ * they should be a one-t-one functions that don't
+ * reorder, drop, inject etc new elements.
  * In the future these restrictions may be lifted,
  * for now please refer to the following resources for more:
  * - [[https://github.com/akka/akka-stream-contrib/pull/142#discussion_r228875614]]
