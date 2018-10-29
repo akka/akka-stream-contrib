@@ -41,5 +41,23 @@ class SourceRepeatEvalSpec extends BaseStreamSpec {
       probe.request(1)
       probe.expectComplete()
     }
+
+    "report correct cancellation state" in {
+      val int = new AtomicInteger(0)
+
+      val (c, probe) = SourceRepeatEval(() => int.getAndIncrement())
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      assert(probe.requestNext() == 0)
+      assert(!c.isCancelled)
+
+      assert(c.cancel())
+
+      probe.request(1).expectComplete()
+
+      assert(c.isCancelled)
+      assert(!c.cancel())
+    }
   }
 }
