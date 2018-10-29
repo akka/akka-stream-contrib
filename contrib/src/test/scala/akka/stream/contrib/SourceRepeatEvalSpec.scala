@@ -16,7 +16,7 @@ class SourceRepeatEvalSpec extends BaseStreamSpec {
     "generate elements" in {
       val int = new AtomicInteger(0)
 
-      val probe = SourceRepeatEval(int.getAndIncrement())
+      val probe = SourceRepeatEval(() => int.getAndIncrement())
         .take(10)
         .toMat(TestSink.probe)(Keep.right)
         .run()
@@ -28,7 +28,7 @@ class SourceRepeatEvalSpec extends BaseStreamSpec {
     }
 
     "support cancellation" in {
-      val (c, probe) = SourceRepeatEval(Random.nextInt)
+      val (c, probe) = SourceRepeatEval(() => Random.nextInt)
         .toMat(TestSink.probe)(Keep.both)
         .run()
 

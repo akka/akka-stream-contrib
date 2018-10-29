@@ -6,26 +6,26 @@ package akka.stream.contrib
 
 import java.util.concurrent.atomic.AtomicBoolean
 import akka.actor.Cancellable
-import akka.stream.{ Attributes, scaladsl }
+import akka.stream.Attributes
 import akka.stream.impl.Unfold
 import akka.stream.scaladsl.Source
 
 /**
  * Create a `Source` that will output elements of type `A`
- * given a by-name "producer"
+ * given a "producer" function
  *
  * Examples:
  *
  * stream of current times:
  *
  * {{{
- *   SourceRepeatEval(System.currentTimeMillis)
+ *   SourceRepeatEval(() => System.currentTimeMillis)
  * }}}
  *
  * stream of random numbers:
  *
  * {{{
- *   SourceRepeatEval(Random.nextInt)
+ *   SourceRepeatEval(() => Random.nextInt)
  * }}}
  *
  * Behavior is the same as in
