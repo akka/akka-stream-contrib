@@ -95,7 +95,7 @@ object PassThroughFlow {
         builder.add(ZipWith[I, O, R]((left, right) => output(left, right)))
 
       // format: off
-      broadcast.out(0)          ~>          zip.in0
+      broadcast.out(0) ~> zip.in0
       broadcast.out(1) ~> processingFlow ~> zip.in1
       // format: on
 
