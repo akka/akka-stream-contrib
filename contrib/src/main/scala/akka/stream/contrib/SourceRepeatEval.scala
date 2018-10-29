@@ -6,21 +6,47 @@ package akka.stream.contrib
 
 import java.util.concurrent.atomic.AtomicBoolean
 import akka.actor.Cancellable
-import akka.stream.Attributes
+import akka.stream.{Attributes, scaladsl}
 import akka.stream.impl.Unfold
 import akka.stream.scaladsl.Source
 
+
+/**
+  * Create a `Source` that will output elements of type `A`
+  * given a by-name "producer"
+  *
+  * Examples:
+  *
+  * stream of current times:
+  *
+  * {{{
+  *   SourceRepeatEval(System.currentTimeMillis)
+  * }}}
+  *
+  * stream of random numbers:
+  *
+  * {{{
+  *   SourceRepeatEval(Random.nextInt)
+  * }}}
+  *
+  * Behavior is the same as in
+  * {{{
+  *   Source.repeat(()).map(_ => x)
+  * }}}
+  *
+  * Supports cancellation via materialized `Cancellable`.
+  */
 object SourceRepeatEval {
-  def apply[T](element: => T): Source[T, Cancellable] = {
+  def apply[A](element: => A): Source[A, Cancellable] = {
     val c: Cancellable = new Cancellable {
       private val stopped: AtomicBoolean = new AtomicBoolean(false)
       override def cancel(): Boolean = stopped.compareAndSet(false, true)
       override def isCancelled: Boolean = stopped.get()
     }
 
-    def nextElement(): T = element
+    def nextElement(): A = element
 
-    def nextStep: Unit => Option[(Unit, T)] = {
+    def nextStep: Unit => Option[(Unit, A)] = {
       _ =>
         {
           if (c.isCancelled) {
@@ -32,7 +58,7 @@ object SourceRepeatEval {
     }
 
     Source
-      .fromGraph(new Unfold[Unit, T]((), nextStep))
+      .fromGraph(new Unfold[Unit, A]((), nextStep))
       .withAttributes(Attributes.name("repeat-eval"))
       .mapMaterializedValue(_ => c)
   }
