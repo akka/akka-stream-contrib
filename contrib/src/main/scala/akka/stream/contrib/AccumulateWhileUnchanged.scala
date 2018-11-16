@@ -5,10 +5,11 @@
 package akka.stream.contrib
 
 import akka.japi.function
-import akka.stream.stage.{ GraphStage, GraphStageLogic, InHandler, OutHandler }
+import akka.stream.stage.{ GraphStage, TimerGraphStageLogic, InHandler, OutHandler }
 import akka.stream.{ Attributes, FlowShape, Inlet, Outlet }
 
 import scala.collection.immutable
+import scala.concurrent.duration.FiniteDuration
 
 object AccumulateWhileUnchanged {
 
@@ -16,41 +17,60 @@ object AccumulateWhileUnchanged {
    * Factory for [[AccumulateWhileUnchanged]] instances
    *
    * @param propertyExtractor a function to extract the observed element property
+   * @param maxElements maximum number of elements to accumulate before emitting, if defined.
+   * @param maxDuration maximum duration to accumulate elements before emitting, if defined.
    * @tparam Element  type of accumulated elements
    * @tparam Property type of the observed property
    * @return [[AccumulateWhileUnchanged]] instance
    */
-  def apply[Element, Property](propertyExtractor: Element => Property) = new AccumulateWhileUnchanged(propertyExtractor)
+  def apply[Element, Property](
+    propertyExtractor: Element => Property,
+    maxElements:       Option[Int]            = None,
+    maxDuration:       Option[FiniteDuration] = None) =
+    new AccumulateWhileUnchanged(propertyExtractor, maxElements, maxDuration)
 
   /**
    * Java API: Factory for [[AccumulateWhileUnchanged]] instances
    *
    * @param propertyExtractor a function to extract the observed element property
+   * @param maxElements maximum number of elements to accumulate before emitting, if defined.
+   * @param maxDuration maximum duration to accumulate elements before emitting, if defined.
    * @tparam Element  type of accumulated elements
    * @tparam Property type of the observed property
    * @return [[AccumulateWhileUnchanged]] instance
    */
-  def create[Element, Property](propertyExtractor: function.Function[Element, Property]) = new AccumulateWhileUnchanged(propertyExtractor.apply)
+  def create[Element, Property](
+    propertyExtractor: function.Function[Element, Property],
+    maxElements:       Option[Int]                          = None,
+    maxDuration:       Option[FiniteDuration]               = None) =
+    new AccumulateWhileUnchanged(propertyExtractor.apply, maxElements, maxDuration)
 }
 
 /**
  * Accumulates elements of type [[Element]] while a property extracted with [[propertyExtractor]] remains unchanged,
- * emits an accumulated sequence when the property changes
+ * emits an accumulated sequence when the property changes, maxElements is reached or maxDuration has passed.
  *
  * @param propertyExtractor a function to extract the observed element property
+ * @param maxElements maximum number of elements to accumulate before emitting, if defined.
+ * @param maxDuration maximum duration to accumulate elements before emitting, if defined.
  * @tparam Element  type of accumulated elements
  * @tparam Property type of the observed property
  */
-final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Element => Property) extends GraphStage[FlowShape[Element, immutable.Seq[Element]]] {
+final class AccumulateWhileUnchanged[Element, Property](
+  propertyExtractor: Element => Property,
+  maxElements:       Option[Int]            = None,
+  maxDuration:       Option[FiniteDuration] = None)
+  extends GraphStage[FlowShape[Element, immutable.Seq[Element]]] {
 
   val in = Inlet[Element]("AccumulateWhileUnchanged.in")
   val out = Outlet[immutable.Seq[Element]]("AccumulateWhileUnchanged.out")
 
   override def shape = FlowShape.of(in, out)
 
-  override def createLogic(inheritedAttributes: Attributes) = new GraphStageLogic(shape) {
+  override def createLogic(inheritedAttributes: Attributes) = new TimerGraphStageLogic(shape) {
 
     private var currentState: Option[Property] = None
+    private var nbElements: Int = 0
     private val buffer = Vector.newBuilder[Element]
 
     setHandlers(in, out, new InHandler with OutHandler {
@@ -63,19 +83,22 @@ final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Eleme
 
         currentState match {
           case Some(`nextState`) =>
-            buffer += nextElement
-            pull(in)
+            if (maxElements.isDefined && nbElements >= maxElements.get) {
+              pushResults(Some(nextElement), Some(nextState))
+            } else {
+              buffer += nextElement
+              nbElements += 1
+              pull(in)
+            }
           case _ =>
-            val result = buffer.result()
-            buffer.clear()
-            buffer += nextElement
-            push(out, result)
-            currentState = Some(nextState)
+            pushResults(Some(nextElement), Some(nextState))
         }
       }
 
       override def onPull(): Unit = {
-        pull(in)
+        if (!hasBeenPulled(in)) {
+          pull(in)
+        }
       }
 
       override def onUpstreamFinish(): Unit = {
@@ -87,8 +110,38 @@ final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Eleme
       }
     })
 
+    override def preStart(): Unit = {
+      super.preStart()
+      if (maxDuration.isDefined) {
+        schedulePeriodically(None, maxDuration.get)
+      }
+    }
     override def postStop(): Unit = {
       buffer.clear()
+    }
+
+    override protected def onTimer(timerKey: Any): Unit = {
+      pushResults(None, None)
+    }
+
+    private def pushResults(
+      nextElement: Option[Element],
+      nextState:   Option[Property]): Unit = {
+      if (!isAvailable(out)) { return }
+
+      val result = buffer.result()
+      buffer.clear()
+      nbElements = 0
+
+      if (result.nonEmpty) {
+        push(out, result)
+      }
+
+      if (nextElement.isDefined) {
+        buffer += nextElement.get
+        nbElements += 1
+      }
+      currentState = nextState
     }
   }
 }
