@@ -84,8 +84,8 @@ object ZipInputStreamSource {
  */
 final class ZipInputStreamSource private (
   in:                   () => ZipInputStream,
-  chunkSize:            Int                   = DefaultChunkSize,
-  allowedZipExtensions: immutable.Seq[String] = DefaultAllowedZipExtensions) extends GraphStageWithMaterializedValue[SourceShape[(ZipEntryData, ByteString)], Future[Long]] {
+  chunkSize:            Int,
+  allowedZipExtensions: immutable.Seq[String]) extends GraphStageWithMaterializedValue[SourceShape[(ZipEntryData, ByteString)], Future[Long]] {
 
   val matValue = Promise[Long]()
 

@@ -8,7 +8,7 @@ import akka.stream.scaladsl._
 import akka.stream.OverflowStrategies
 import akka.stream.testkit.{ TestPublisher, TestSubscriber }
 import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
-import scala.concurrent.duration.{ DurationInt, DurationLong }
+import scala.concurrent.duration.DurationInt
 import akka.util.Timeout
 
 class UnfoldFlowSpecAutoFusingOn extends { val autoFusing = true } with UnfoldFlowSpec
