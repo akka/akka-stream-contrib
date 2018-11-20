@@ -11,6 +11,7 @@ import org.scalatest.{ Matchers, WordSpec }
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class SampleSpec extends WordSpec with Matchers {
   private implicit val system = ActorSystem("SampleTest")

@@ -4,9 +4,8 @@
 
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{ Flow, Keep, Sink, Source }
+import akka.stream.scaladsl.{ Flow, Sink, Source }
 import akka.stream.testkit.TestSubscriber
-import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestProbe
 import org.reactivestreams.{ Publisher, Subscriber }
 

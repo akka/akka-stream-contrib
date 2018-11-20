@@ -13,8 +13,8 @@ import akka.stream.testkit.scaladsl._
 import org.scalatest._
 import org.scalatest.Matchers._
 import org.scalatest.concurrent.ScalaFutures
+import scala.language.postfixOps
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class ValveSpec extends WordSpec with ScalaFutures {
