@@ -81,16 +81,12 @@ final class AccumulateWhileUnchanged[Element, Property](
 
         if (currentState.isEmpty) currentState = Some(nextState)
 
-        currentState match {
-          case Some(`nextState`) =>
-            if (maxElements.isDefined && nbElements >= maxElements.get) {
-              pushResults(Some(nextElement), Some(nextState))
-            } else {
-              buffer += nextElement
-              nbElements += 1
-              pull(in)
-            }
-          case _ =>
+        (currentState, maxElements) match {
+          case (Some(`nextState`), max) if max.isEmpty || nbElements < max.get =>
+            buffer += nextElement
+            nbElements += 1
+            pull(in)
+          case (_, _) =>
             pushResults(Some(nextElement), Some(nextState))
         }
       }
@@ -112,8 +108,9 @@ final class AccumulateWhileUnchanged[Element, Property](
 
     override def preStart(): Unit = {
       super.preStart()
-      if (maxDuration.isDefined) {
-        schedulePeriodically(None, maxDuration.get)
+      maxDuration match {
+        case Some(max) => schedulePeriodically(None, max)
+        case None      => Unit
       }
     }
     override def postStop(): Unit = {
@@ -137,10 +134,13 @@ final class AccumulateWhileUnchanged[Element, Property](
         push(out, result)
       }
 
-      if (nextElement.isDefined) {
-        buffer += nextElement.get
-        nbElements += 1
+      nextElement match {
+        case Some(next) =>
+          buffer += nextElement.get
+          nbElements += 1
+        case None => Unit
       }
+
       currentState = nextState
     }
   }
