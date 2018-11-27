@@ -82,12 +82,9 @@ final class AccumulateWhileUnchanged[Element, Property](
         if (currentState.isEmpty) currentState = Some(nextState)
 
         (currentState, maxElements) match {
-          case (Some(`nextState`), max) if max.isEmpty || nbElements < max.get =>
-            buffer += nextElement
-            nbElements += 1
-            pull(in)
-          case (_, _) =>
-            pushResults(Some(nextElement), Some(nextState))
+          case (Some(`nextState`), None) => stash(nextElement)
+          case (Some(`nextState`), Some(max)) if nbElements < max => stash(nextElement)
+          case _ => pushResults(Some(nextElement), Some(nextState))
         }
       }
 
@@ -103,6 +100,12 @@ final class AccumulateWhileUnchanged[Element, Property](
           emit(out, result)
         }
         completeStage()
+      }
+
+      private def stash(nextElement: Element) = {
+        buffer += nextElement
+        nbElements += 1
+        pull(in)
       }
     })
 
@@ -136,7 +139,7 @@ final class AccumulateWhileUnchanged[Element, Property](
 
       nextElement match {
         case Some(next) =>
-          buffer += nextElement.get
+          buffer += next
           nbElements += 1
         case None => Unit
       }
