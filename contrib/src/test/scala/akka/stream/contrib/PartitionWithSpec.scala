@@ -5,7 +5,7 @@
 package akka.stream.contrib
 
 import akka.stream.scaladsl._
-import akka.stream.{ ClosedShape, FlowShape }
+import akka.stream.{ ClosedShape, FanOutShape2, FlowShape, Graph }
 import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
 
 class PartitionWithSpecAutoFusingOn extends { val autoFusing = true } with PartitionWithSpec
@@ -13,21 +13,24 @@ class PartitionWithSpecAutoFusingOff extends { val autoFusing = false } with Par
 
 trait PartitionWithSpec extends BaseStreamSpec {
 
-  val flow = Flow.fromGraph(GraphDSL.create() { implicit b =>
+  private def mergeFanOut[I, O, M](fanOutGraph: Graph[FanOutShape2[I, O, O], M]): Flow[I, O, M] = {
+    Flow.fromGraph(GraphDSL.create(fanOutGraph){ implicit builder =>
+      fanOut => {
+        import GraphDSL.Implicits._
 
-    import GraphDSL.Implicits._
+        val mrg = builder.add(Merge[O](2))
 
-    val pw = b.add(PartitionWith[Int, Int, Int] {
-      case i if i % 2 == 0 => Left(i / 2)
-      case i               => Right(i * 3 - 1)
+        fanOut.out0 ~> mrg.in(0)
+        fanOut.out1 ~> mrg.in(1)
+
+        FlowShape(fanOut.in, mrg.out)
+      }
     })
+  }
 
-    val mrg = b.add(Merge[Int](2))
-
-    pw.out0 ~> mrg.in(0)
-    pw.out1 ~> mrg.in(1)
-
-    FlowShape(pw.in, mrg.out)
+  val flow = mergeFanOut(PartitionWith[Int, Int, Int] {
+    case i if i % 2 == 0 => Left(i / 2)
+    case i               => Right(i * 3 - 1)
   })
 
   "PartitionWith" should {
@@ -92,6 +95,25 @@ trait PartitionWithSpec extends BaseStreamSpec {
       sub2.request(10)
       (1 to 10).foreach(i => pub.sendNext(2 * i + 1))
       sub2.expectNext(3, 5, 7, 9, 11, 13, 15, 17, 19, 21)
+    }
+  }
+
+  "partitionWith extension method" should {
+    "be callable on Flow and partition its output" in {
+      import PartitionWith.Implicits._
+
+      val flow = mergeFanOut(
+        Flow[Int].partitionWith(i => if (i % 2 == 0) Left(-i) else Right(i))
+      )
+
+      val (source, sink) = TestSource.probe[Int]
+        .via(flow)
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      sink.request(10)
+      (1 to 10).foreach(source.sendNext)
+      sink.expectNextN(List(1, -2, 3, -4, 5, -6, 7, -8, 9, -10))
     }
   }
 }

@@ -5,7 +5,8 @@
 package akka.stream.contrib
 
 import akka.japi.function
-import akka.stream.{ Attributes, FanOutShape2 }
+import akka.stream.scaladsl.{ GraphDSL, Keep }
+import akka.stream.{ Attributes, FanOutShape2, FlowShape, Graph }
 import akka.stream.stage.{ GraphStage, GraphStageLogic, InHandler, OutHandler }
 
 /**
@@ -34,6 +35,24 @@ object PartitionWith {
    * @return [[PartitionWith]] instance
    */
   def create[In, Out0, Out1](p: function.Function[In, Either[Out0, Out1]]): PartitionWith[In, Out0, Out1] = new PartitionWith(p.apply)
+
+  object Implicits {
+    implicit final class FlowGraphOps[In, Out, M](val flowGraph: Graph[FlowShape[In, Out], M]) extends AnyVal {
+
+      /**
+       * Partition the output of the decorated flow according to the given partition function.
+       */
+      def partitionWith[Out0, Out1](p: Out => Either[Out0, Out1]): Graph[FanOutShape2[In, Out0, Out1], M] = {
+        GraphDSL.create(flowGraph, PartitionWith(p))(Keep.left) { implicit builder =>
+          (flow, fanOut) => {
+            import GraphDSL.Implicits._
+            flow.out ~> fanOut.in
+            new FanOutShape2(flow.in, fanOut.out0, fanOut.out1)
+          }
+        }
+      }
+    }
+  }
 }
 
 /**
