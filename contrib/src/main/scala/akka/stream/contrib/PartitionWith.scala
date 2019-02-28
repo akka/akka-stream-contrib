@@ -43,12 +43,11 @@ object PartitionWith {
        * Partition the output of the decorated flow according to the given partition function.
        */
       def partitionWith[Out0, Out1](p: Out => Either[Out0, Out1]): Graph[FanOutShape2[In, Out0, Out1], M] = {
-        GraphDSL.create(flowGraph, PartitionWith(p))(Keep.left) { implicit builder =>
-          (flow, fanOut) => {
-            import GraphDSL.Implicits._
-            flow.out ~> fanOut.in
-            new FanOutShape2(flow.in, fanOut.out0, fanOut.out1)
-          }
+        GraphDSL.create(flowGraph, PartitionWith(p))(Keep.left) { implicit builder => (flow, fanOut) => {
+          import GraphDSL.Implicits._
+          flow.out ~> fanOut.in
+          new FanOutShape2(flow.in, fanOut.out0, fanOut.out1)
+        }
         }
       }
     }

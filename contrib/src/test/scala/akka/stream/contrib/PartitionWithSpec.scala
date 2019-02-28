@@ -14,17 +14,16 @@ class PartitionWithSpecAutoFusingOff extends { val autoFusing = false } with Par
 trait PartitionWithSpec extends BaseStreamSpec {
 
   private def mergeFanOut[I, O, M](fanOutGraph: Graph[FanOutShape2[I, O, O], M]): Flow[I, O, M] = {
-    Flow.fromGraph(GraphDSL.create(fanOutGraph){ implicit builder =>
-      fanOut => {
-        import GraphDSL.Implicits._
+    Flow.fromGraph(GraphDSL.create(fanOutGraph) { implicit builder => fanOut => {
+      import GraphDSL.Implicits._
 
-        val mrg = builder.add(Merge[O](2))
+      val mrg = builder.add(Merge[O](2))
 
-        fanOut.out0 ~> mrg.in(0)
-        fanOut.out1 ~> mrg.in(1)
+      fanOut.out0 ~> mrg.in(0)
+      fanOut.out1 ~> mrg.in(1)
 
-        FlowShape(fanOut.in, mrg.out)
-      }
+      FlowShape(fanOut.in, mrg.out)
+    }
     })
   }
 
@@ -103,8 +102,7 @@ trait PartitionWithSpec extends BaseStreamSpec {
       import PartitionWith.Implicits._
 
       val flow = mergeFanOut(
-        Flow[Int].partitionWith(i => if (i % 2 == 0) Left(-i) else Right(i))
-      )
+        Flow[Int].partitionWith(i => if (i % 2 == 0) Left(-i) else Right(i)))
 
       val (source, sink) = TestSource.probe[Int]
         .via(flow)
