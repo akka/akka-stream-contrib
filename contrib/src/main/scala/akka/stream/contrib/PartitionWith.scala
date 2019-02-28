@@ -18,23 +18,29 @@ object PartitionWith {
    * Factory for [[PartitionWith]] instances.
    *
    * @param p partition function
+   * @param eagerCancel when `false` (the default), cancel after all downstream have cancelled.
+   *                    When `true`, cancel as soon as any downstream cancels and complete the remaining downstreams
    * @tparam In input type
    * @tparam Out0 left output type
    * @tparam Out1 right output type
    * @return [[PartitionWith]] instance
    */
-  def apply[In, Out0, Out1](p: In => Either[Out0, Out1]): PartitionWith[In, Out0, Out1] = new PartitionWith(p)
+  def apply[In, Out0, Out1](p: In => Either[Out0, Out1], eagerCancel: Boolean = false): PartitionWith[In, Out0, Out1] =
+    new PartitionWith(p, eagerCancel)
 
   /**
    * Java API: Factory for [[PartitionWith]] instances.
    *
    * @param p partition function
+   * @param eagerCancel when `false` (the default), cancel after all downstream have cancelled.
+   *                    When `true`, cancel as soon as any downstream cancels and complete the remaining downstreams
    * @tparam In input type
    * @tparam Out0 left output type
    * @tparam Out1 right output type
    * @return [[PartitionWith]] instance
    */
-  def create[In, Out0, Out1](p: function.Function[In, Either[Out0, Out1]]): PartitionWith[In, Out0, Out1] = new PartitionWith(p.apply)
+  def create[In, Out0, Out1](p: function.Function[In, Either[Out0, Out1]], eagerCancel: Boolean = false): PartitionWith[In, Out0, Out1] =
+    new PartitionWith(p.apply, eagerCancel)
 
   object Implicits {
     implicit final class FlowGraphOps[In, Out, M](val flowGraph: Graph[FlowShape[In, Out], M]) extends AnyVal {
@@ -60,11 +66,14 @@ object PartitionWith {
  * according to the received partition function.
  *
  * @param p partition function
+ * @param eagerCancel when `false` (the default), cancel after all downstream have cancelled.
+ *                    When `true`, cancel as soon as any downstream cancels and complete the remaining downstreams
  * @tparam In input type
  * @tparam Out0 left output type
  * @tparam Out1 right output type
  */
-final class PartitionWith[In, Out0, Out1] private (p: In => Either[Out0, Out1]) extends GraphStage[FanOutShape2[In, Out0, Out1]] {
+final class PartitionWith[In, Out0, Out1] private (p: In => Either[Out0, Out1], eagerCancel: Boolean)
+  extends GraphStage[FanOutShape2[In, Out0, Out1]] {
 
   override val shape = new FanOutShape2[In, Out0, Out1]("partitionWith")
 
@@ -72,6 +81,7 @@ final class PartitionWith[In, Out0, Out1] private (p: In => Either[Out0, Out1]) 
     import shape._
 
     private var pending: Either[Out0, Out1] = null
+    private var activeDownstreamCount = 2
 
     setHandler(in, new InHandler {
       override def onPush() = {
@@ -107,6 +117,9 @@ final class PartitionWith[In, Out0, Out1] private (p: In => Either[Out0, Out1]) 
         }
       }
       else if (!hasBeenPulled(in)) pull(in)
+
+      override def onDownstreamFinish(): Unit =
+        downstreamFinished()
     })
 
     setHandler(out1, new OutHandler {
@@ -120,6 +133,18 @@ final class PartitionWith[In, Out0, Out1] private (p: In => Either[Out0, Out1]) 
         }
       }
       else if (!hasBeenPulled(in)) pull(in)
+
+      override def onDownstreamFinish(): Unit =
+        downstreamFinished()
     })
+
+    private def downstreamFinished(): Unit = {
+      activeDownstreamCount -= 1
+      if (eagerCancel) {
+        completeStage()
+      } else if (activeDownstreamCount == 0) {
+        cancel(in)
+      }
+    }
   }
 }
