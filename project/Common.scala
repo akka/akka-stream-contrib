@@ -14,8 +14,8 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 object Common extends AutoPlugin {
 
   val AkkaVersion = sys.env.get("AKKA_SERIES") match {
-    case Some("2.5") => "2.5.13"
-    case _ => "2.4.18"
+    case Some("2.5") => "2.5.21"
+    case _ => "2.4.20"
   }
 
   override def trigger = allRequirements
@@ -52,8 +52,8 @@ object Common extends AutoPlugin {
     libraryDependencies ++= Seq(
       "com.typesafe.akka"      %% "akka-stream"                         % AkkaVersion,
       "com.typesafe.akka"      %% "akka-stream-testkit"                 % AkkaVersion   % Test,
-      "org.scalatest"          %% "scalatest"                           % "3.0.0"       % Test, // ApacheV2
-      "com.miguno.akka"        %% "akka-mock-scheduler"                 % "0.5.1"       % Test // ApacheV2
+      "org.scalatest"          %% "scalatest"                           % "3.0.5"       % Test, // ApacheV2
+      "com.miguno.akka"        %% "akka-mock-scheduler"                 % "0.5.4"       % Test // ApacheV2
     ),
     headerLicense := Some(HeaderLicense.Custom(
         s"Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>")),
