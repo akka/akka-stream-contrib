@@ -111,6 +111,56 @@ trait PartitionWithSpec extends BaseStreamSpec {
       (1 to 10).foreach(i => pub.sendNext(2 * i + 1))
       sub2.expectNext(3, 5, 7, 9, 11, 13, 15, 17, 19, 21)
     }
+
+    "with eagerCancel=false (the default), continue after cancellation of one of the downstreams" in {
+      val source = TestSource.probe[Int]
+      val sink0 = TestSink.probe[Int]
+      val sink1 = TestSink.probe[Int]
+
+      val graph = GraphDSL.create(source, sink0, sink1)(Tuple3.apply) { implicit b => (src, snk0, snk1) =>
+        import GraphDSL.Implicits._
+
+        val partition = b.add(PartitionWith[Int, Int, Int](i => if (i % 2 == 0) Left(i) else Right(i)))
+
+        src.out ~> partition.in
+        partition.out0 ~> snk0.in
+        partition.out1 ~> snk1.in
+
+        ClosedShape
+      }
+      val (pub, sub0, sub1) = RunnableGraph.fromGraph(graph).run()
+
+      sub1.request(n = 1)
+      sub0.cancel()
+      pub.sendNext(5)
+      sub1.expectNext(5)
+    }
+
+    "with eagerCancel=true, cancel and complete the other downstream after cancellation of one of the downstreams" in {
+      val source = TestSource.probe[Int]
+      val sink0 = TestSink.probe[Int]
+      val sink1 = TestSink.probe[Int]
+
+      val graph = GraphDSL.create(source, sink0, sink1)(Tuple3.apply) { implicit b => (src, snk0, snk1) =>
+        import GraphDSL.Implicits._
+
+        val partition = b.add(PartitionWith[Int, Int, Int](
+          i => if (i % 2 == 0) Left(i) else Right(i),
+          eagerCancel = true))
+
+        src.out ~> partition.in
+        partition.out0 ~> snk0.in
+        partition.out1 ~> snk1.in
+
+        ClosedShape
+      }
+      val (pub, sub0, sub1) = RunnableGraph.fromGraph(graph).run()
+
+      sub1.request(n = 1)
+      sub0.cancel()
+      pub.expectCancellation()
+      sub1.expectComplete()
+    }
   }
 
   "partitionWith extension method" should {
