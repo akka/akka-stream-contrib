@@ -27,9 +27,11 @@ developers += Developer("contributors",
   url("https://github.com/akka/akka-stream-contrib/graphs/contributors"))
 
 publishTo := sonatypePublishTo.value
-pgpPassphrase := sys.env.get("PGP_PASS").map(_.toCharArray)
 publishMavenStyle := true
-isSnapshot := !isVersionStable.value
+isSnapshot := !isVersionStable.value // publish all stable versions as non-snapshots
+pgpPublicRing := file("ci-keys/pubring.asc")
+pgpSecretRing := file("ci-keys/secring.asc")
+pgpPassphrase := sys.env.get("PGP_PASS").map(_.toCharArray)
 
 scalacOptions ++= Seq(
   "-encoding",
