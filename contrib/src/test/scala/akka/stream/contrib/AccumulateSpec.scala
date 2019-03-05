@@ -4,8 +4,8 @@
 
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{ Keep, Source }
-import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
+import akka.stream.scaladsl.{Keep, Source}
+import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 
 class AccumulateSpecAutoFusingOn extends { val autoFusing = true } with AccumulateSpec
 class AccumulateSpecAutoFusingOff extends { val autoFusing = false } with AccumulateSpec
@@ -14,7 +14,8 @@ trait AccumulateSpec extends BaseStreamSpec {
 
   "Accumulate" should {
     "emit folded vaules starting with the result of applying the given function to the given zero and the first pushed element" in {
-      val (source, sink) = TestSource.probe[Int]
+      val (source, sink) = TestSource
+        .probe[Int]
         .via(Accumulate(0)(_ + _))
         .toMat(TestSink.probe)(Keep.both)
         .run()
@@ -36,7 +37,8 @@ trait AccumulateSpec extends BaseStreamSpec {
     }
 
     "fail on upstream failure" in {
-      val (source, sink) = TestSource.probe[Int]
+      val (source, sink) = TestSource
+        .probe[Int]
         .via(Accumulate(0)(_ + _))
         .toMat(TestSink.probe)(Keep.both)
         .run()

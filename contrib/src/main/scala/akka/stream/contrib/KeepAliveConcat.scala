@@ -32,7 +32,7 @@ import scala.concurrent.duration.FiniteDuration
  * @see [[akka.stream.scaladsl.FlowOps#expand]]
  */
 final case class KeepAliveConcat[T](keepAliveFailoverSize: Int, interval: FiniteDuration, extrapolate: T ⇒ Seq[T])
-  extends GraphStage[FlowShape[T, T]] {
+    extends GraphStage[FlowShape[T, T]] {
 
   require(keepAliveFailoverSize > 0, "The buffer keep alive failover size must be greater than 0.")
 
@@ -60,7 +60,7 @@ final case class KeepAliveConcat[T](keepAliveFailoverSize: Int, interval: Finite
         else pull(in)
       }
 
-      override def onPull(): Unit = {
+      override def onPull(): Unit =
         if (isClosed(in)) {
           if (buffer.isEmpty) completeStage()
           else push(out, buffer.removeFirst())
@@ -69,15 +69,12 @@ final case class KeepAliveConcat[T](keepAliveFailoverSize: Int, interval: Finite
         } else if (!hasBeenPulled(in)) {
           pull(in)
         }
-      }
 
-      override def onTimer(timerKey: Any) = {
+      override def onTimer(timerKey: Any) =
         if (isAvailable(out) && !buffer.isEmpty) push(out, buffer.removeFirst())
-      }
 
-      override def onUpstreamFinish(): Unit = {
+      override def onUpstreamFinish(): Unit =
         if (buffer.isEmpty) completeStage()
-      }
 
       setHandlers(in, out, this)
     }

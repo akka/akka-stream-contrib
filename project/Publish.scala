@@ -27,12 +27,14 @@ object Publish extends AutoPlugin {
     organizationHomepage := Some(url("http://www.lightbend.com")),
     homepage := Some(url("https://github.com/akka/akka-stream-contrib")),
     publishMavenStyle := true,
-    pomIncludeRepository := { x => false },
+    pomIncludeRepository := { x =>
+      false
+    },
     defaultPublishTo := crossTarget.value / "repository",
     ThisBuild / dynverSonatypeSnapshots := true,
   )
 
-  def akkaPomExtra = {
+  def akkaPomExtra =
     <scm>
       <url>git@github.com:akka/akka-stream-contrib.git</url>
       <connection>scm:git:git@github.com:akka/akka-stream-contrib.git</connection>
@@ -45,7 +47,6 @@ object Publish extends AutoPlugin {
         <url>https://github.com/akka/akka-stream-contrib/graphs/contributors</url>
       </developer>
     </developers>
-  }
 
   private def akkaPublishTo = Def.setting {
     sonatypeRepo(isSnapshot.value) orElse localRepo(defaultPublishTo.value)

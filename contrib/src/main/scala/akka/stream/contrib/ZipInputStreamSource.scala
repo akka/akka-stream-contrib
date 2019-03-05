@@ -4,18 +4,18 @@
 
 package akka.stream.contrib
 
-import java.util.zip.{ ZipEntry, ZipInputStream }
-import akka.stream.Attributes.{ InputBuffer, name }
+import java.util.zip.{ZipEntry, ZipInputStream}
+import akka.stream.Attributes.{name, InputBuffer}
 import akka.stream.contrib.ZipInputStreamSource.ZipEntryData
 import akka.stream.impl.Stages.DefaultAttributes.IODispatcher
 import akka.stream.scaladsl.Source
-import akka.stream.stage.{ GraphStageLogic, GraphStageWithMaterializedValue, OutHandler }
-import akka.stream.{ Attributes, Outlet, SourceShape }
+import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
+import akka.stream.{Attributes, Outlet, SourceShape}
 import akka.util.ByteString
 import akka.util.ByteString.ByteString1C
 import scala.annotation.tailrec
 import scala.collection.immutable
-import scala.concurrent.{ Future, Promise }
+import scala.concurrent.{Future, Promise}
 import scala.util.control.NonFatal
 
 /**
@@ -47,10 +47,12 @@ object ZipInputStreamSource {
    * @return [[ZipInputStreamSource]] instance
    */
   def apply(
-    in:                   () => ZipInputStream,
-    chunkSize:            Int                   = DefaultChunkSize,
-    allowedZipExtensions: immutable.Seq[String] = DefaultAllowedZipExtensions): Source[(ZipEntryData, ByteString), Future[Long]] =
-    Source.fromGraph(new ZipInputStreamSource(in, chunkSize, allowedZipExtensions))
+      in: () => ZipInputStream,
+      chunkSize: Int = DefaultChunkSize,
+      allowedZipExtensions: immutable.Seq[String] = DefaultAllowedZipExtensions
+  ): Source[(ZipEntryData, ByteString), Future[Long]] =
+    Source
+      .fromGraph(new ZipInputStreamSource(in, chunkSize, allowedZipExtensions))
       .withAttributes(name("zipInputStreamSource") and IODispatcher)
 
   /**
@@ -64,10 +66,12 @@ object ZipInputStreamSource {
    * @return [[ZipInputStreamSource]] instance
    */
   def create(
-    in:                   Function0[ZipInputStream],
-    chunkSize:            Int                       = DefaultChunkSize,
-    allowedZipExtensions: immutable.Seq[String]     = DefaultAllowedZipExtensions): Source[(ZipEntryData, ByteString), Future[Long]] =
-    Source.fromGraph(new ZipInputStreamSource(in, chunkSize, allowedZipExtensions))
+      in: Function0[ZipInputStream],
+      chunkSize: Int = DefaultChunkSize,
+      allowedZipExtensions: immutable.Seq[String] = DefaultAllowedZipExtensions
+  ): Source[(ZipEntryData, ByteString), Future[Long]] =
+    Source
+      .fromGraph(new ZipInputStreamSource(in, chunkSize, allowedZipExtensions))
       .withAttributes(name("zipInputStreamSource") and IODispatcher)
 }
 
@@ -82,10 +86,10 @@ object ZipInputStreamSource {
  * @param in a function that builds a [[ZipInputStream]]
  * @param chunkSize the size of the chunks
  */
-final class ZipInputStreamSource private (
-  in:                   () => ZipInputStream,
-  chunkSize:            Int,
-  allowedZipExtensions: immutable.Seq[String]) extends GraphStageWithMaterializedValue[SourceShape[(ZipEntryData, ByteString)], Future[Long]] {
+final class ZipInputStreamSource private (in: () => ZipInputStream,
+                                          chunkSize: Int,
+                                          allowedZipExtensions: immutable.Seq[String])
+    extends GraphStageWithMaterializedValue[SourceShape[(ZipEntryData, ByteString)], Future[Long]] {
 
   val matValue = Promise[Long]()
 
@@ -127,53 +131,57 @@ final class ZipInputStreamSource private (
         super.postStop()
       }
 
-      setHandler(out, new OutHandler {
+      setHandler(
+        out,
+        new OutHandler {
 
-        override def onPull(): Unit = {
-          fillBuffer(maxBuffer)
-          buffer match {
-            case Seq() =>
-              finalize()
-            case head +: Seq() =>
-              push(out, head)
-              finalize()
-            case head +: tail =>
-              push(out, head)
-              buffer = tail
+          override def onPull(): Unit = {
+            fillBuffer(maxBuffer)
+            buffer match {
+              case Seq() =>
+                finalize()
+              case head +: Seq() =>
+                push(out, head)
+                finalize()
+              case head +: tail =>
+                push(out, head)
+                buffer = tail
+            }
+            def finalize() =
+              try {
+                is.close()
+              } finally {
+                matValue.success(readBytesTotal)
+                complete(out)
+              }
           }
-          def finalize() = try {
-            is.close()
-          } finally {
-            matValue.success(readBytesTotal)
-            complete(out)
-          }
+
+          override def onDownstreamFinish(): Unit =
+            try {
+              is.close()
+            } finally {
+              matValue.success(readBytesTotal)
+              super.onDownstreamFinish()
+            }
         }
+      ) // end of handler
 
-        override def onDownstreamFinish(): Unit =
-          try {
-            is.close()
-          } finally {
-            matValue.success(readBytesTotal)
-            super.onDownstreamFinish()
-          }
-      }) // end of handler
-
-      @tailrec private def nextEntry(
-        streams: Seq[ZipInputStream]): (Option[ZipEntry], Seq[ZipInputStream]) = streams match {
-        case Seq() => (None, streams)
-        case (z :: zs) =>
-          val entry = Option(z.getNextEntry)
-          entry match {
-            case None =>
-              nextEntry(zs)
-            case Some(e) if isZipFile(e) =>
-              nextEntry(new ZipInputStream(z) +: streams)
-            case Some(e) if e.isDirectory =>
-              nextEntry(streams)
-            case _ =>
-              (entry, streams)
-          }
-      }
+      @tailrec private def nextEntry(streams: Seq[ZipInputStream]): (Option[ZipEntry], Seq[ZipInputStream]) =
+        streams match {
+          case Seq() => (None, streams)
+          case (z :: zs) =>
+            val entry = Option(z.getNextEntry)
+            entry match {
+              case None =>
+                nextEntry(zs)
+              case Some(e) if isZipFile(e) =>
+                nextEntry(new ZipInputStream(z) +: streams)
+              case Some(e) if e.isDirectory =>
+                nextEntry(streams)
+              case _ =>
+                (entry, streams)
+            }
+        }
 
       private def isZipFile(e: ZipEntry) = {
         val name = e.getName.toLowerCase

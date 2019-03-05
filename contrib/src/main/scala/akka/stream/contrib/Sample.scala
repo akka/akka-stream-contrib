@@ -6,10 +6,11 @@ package akka.stream.contrib
 
 import java.util.concurrent.ThreadLocalRandom
 
-import akka.stream.stage.{ GraphStage, GraphStageLogic, InHandler, OutHandler }
-import akka.stream.{ Attributes, FlowShape, Inlet, Outlet }
+import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
 
 object Sample {
+
   /**
    *
    * returns every nth elements
@@ -41,33 +42,33 @@ object Sample {
  * @tparam T
  */
 case class Sample[T](next: () => Int) extends GraphStage[FlowShape[T, T]] {
-  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) with InHandler with OutHandler {
-    var step = getNextStep()
-    var counter = 0
+  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+    new GraphStageLogic(shape) with InHandler with OutHandler {
+      var step = getNextStep()
+      var counter = 0
 
-    def onPull(): Unit = {
-      pull(in)
-    }
-
-    def onPush(): Unit = {
-      counter += 1
-      if (counter >= step) {
-        counter = 0
-        step = getNextStep()
-        push(out, grab(in))
-      } else {
+      def onPull(): Unit =
         pull(in)
+
+      def onPush(): Unit = {
+        counter += 1
+        if (counter >= step) {
+          counter = 0
+          step = getNextStep()
+          push(out, grab(in))
+        } else {
+          pull(in)
+        }
       }
-    }
 
-    private def getNextStep(): Long = {
-      val nextStep = next()
-      require(nextStep > 0, s"sampling step should be a positive value: ${nextStep}")
-      nextStep
-    }
+      private def getNextStep(): Long = {
+        val nextStep = next()
+        require(nextStep > 0, s"sampling step should be a positive value: ${nextStep}")
+        nextStep
+      }
 
-    setHandlers(in, out, this)
-  }
+      setHandlers(in, out, this)
+    }
 
   val in = Inlet[T]("Sample-in")
   val out = Outlet[T]("Sample-out")

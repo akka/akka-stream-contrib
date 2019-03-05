@@ -21,8 +21,7 @@ class SourceRepeatEvalSpec extends BaseStreamSpec {
         .toMat(TestSink.probe)(Keep.right)
         .run()
 
-      assert(
-        probe.request(10).expectNextN(10) == (0 until 10))
+      assert(probe.request(10).expectNextN(10) == (0 until 10))
 
       assert(int.get() == 10)
     }

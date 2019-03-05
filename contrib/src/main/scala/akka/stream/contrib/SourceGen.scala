@@ -13,6 +13,7 @@ import akka.util.Timeout
  * Source factory methods are placed here
  */
 object SourceGen {
+
   /**
    * Create a `Source` that will unfold a value of type `S` by
    * passing it through a flow. The flow should emit a
@@ -33,15 +34,16 @@ object SourceGen {
    */
   def unfoldFlow[S, E, M](seed: S)(flow: Graph[FlowShape[S, (S, E)], M])(implicit timeout: Timeout): Source[E, M] = {
 
-    val generateUnfoldFlowGraphStageLogic = (shape: FanOutShape2[(S, E), S, E]) => new UnfoldFlowGraphStageLogic[(S, E), S, E](shape, seed, timeout) {
-      setHandler(nextElem, new InHandler {
-        override def onPush() = {
-          val (s, e) = grab(nextElem)
-          pending = s
-          push(output, e)
-          pushedToCycle = false
-        }
-      })
+    val generateUnfoldFlowGraphStageLogic = (shape: FanOutShape2[(S, E), S, E]) =>
+      new UnfoldFlowGraphStageLogic[(S, E), S, E](shape, seed, timeout) {
+        setHandler(nextElem, new InHandler {
+          override def onPush() = {
+            val (s, e) = grab(nextElem)
+            pending = s
+            push(output, e)
+            pushedToCycle = false
+          }
+        })
     }
 
     unfoldFlowGraph(new FanOut2unfoldingStage(generateUnfoldFlowGraphStageLogic), flow)
@@ -65,41 +67,45 @@ object SourceGen {
    * exactly one element for every received element). Ignoring this, will have an unpredicted result,
    * and may result in a deadlock.
    */
-  def unfoldFlowWith[E, S, O, M](seed: S, flow: Graph[FlowShape[S, O], M])(unfoldWith: O => Option[(S, E)])(implicit timeout: Timeout): Source[E, M] = {
+  def unfoldFlowWith[E, S, O, M](seed: S, flow: Graph[FlowShape[S, O], M])(
+      unfoldWith: O => Option[(S, E)]
+  )(implicit timeout: Timeout): Source[E, M] = {
 
-    val generateUnfoldFlowGraphStageLogic = (shape: FanOutShape2[O, S, E]) => new UnfoldFlowGraphStageLogic[O, S, E](shape, seed, timeout) {
-      setHandler(nextElem, new InHandler {
-        override def onPush() = {
-          val o = grab(nextElem)
-          unfoldWith(o) match {
-            case None => completeStage()
-            case Some((s, e)) => {
-              pending = s
-              push(output, e)
-              pushedToCycle = false
+    val generateUnfoldFlowGraphStageLogic = (shape: FanOutShape2[O, S, E]) =>
+      new UnfoldFlowGraphStageLogic[O, S, E](shape, seed, timeout) {
+        setHandler(
+          nextElem,
+          new InHandler {
+            override def onPush() = {
+              val o = grab(nextElem)
+              unfoldWith(o) match {
+                case None => completeStage()
+                case Some((s, e)) => {
+                  pending = s
+                  push(output, e)
+                  pushedToCycle = false
+                }
+              }
             }
           }
-        }
-      })
+        )
     }
 
     unfoldFlowGraph(new FanOut2unfoldingStage(generateUnfoldFlowGraphStageLogic), flow)
   }
 
   /** INTERNAL API */
-  private[akka] def unfoldFlowGraph[E, S, O, M](
-    fanOut2Stage: GraphStage[FanOutShape2[O, S, E]],
-    flow:         Graph[FlowShape[S, O], M]): Source[E, M] = Source.fromGraph(GraphDSL.create(flow) {
-    implicit b =>
-      {
-        f =>
-          {
-            import GraphDSL.Implicits._
+  private[akka] def unfoldFlowGraph[E, S, O, M](fanOut2Stage: GraphStage[FanOutShape2[O, S, E]],
+                                                flow: Graph[FlowShape[S, O], M]): Source[E, M] =
+    Source.fromGraph(GraphDSL.create(flow) { implicit b =>
+      { f =>
+        {
+          import GraphDSL.Implicits._
 
-            val fo2 = b.add(fanOut2Stage)
-            fo2.out0 ~> f ~> fo2.in
-            SourceShape(fo2.out1)
-          }
+          val fo2 = b.add(fanOut2Stage)
+          fo2.out0 ~> f ~> fo2.in
+          SourceShape(fo2.out1)
+        }
       }
-  })
+    })
 }

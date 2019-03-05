@@ -6,8 +6,8 @@ package akka.stream.contrib
 
 import akka.actor.ActorSystem
 import akka.stream._
-import akka.stream.scaladsl.{ Sink, Source }
-import org.scalatest.{ Matchers, WordSpec }
+import akka.stream.scaladsl.{Sink, Source}
+import org.scalatest.{Matchers, WordSpec}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -38,7 +38,8 @@ class SampleSpec extends WordSpec with Matchers {
         num
       }
 
-      val future = Source.fromIterator[Int](() => (1 to 10).toIterator)
+      val future = Source
+        .fromIterator[Int](() => (1 to 10).toIterator)
         .via(Sample(mockRandom))
         .runWith(Sink.seq)
 

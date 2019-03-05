@@ -24,7 +24,7 @@ object PagedSourceSpec {
         val indices = key * itemsPerPage until (key + 1) * itemsPerPage
         val filteredIndices = size match {
           case Some(sz) => indices.filter(_ < sz)
-          case None     => indices
+          case None => indices
         }
         PagedSource.Page(filteredIndices.map(_ * 2), Some(key + 1))
       }
@@ -40,9 +40,9 @@ object PagedSourceSpec {
 
   object LinkedIntPages {
     def page(key: String): (List[Int], String) = key match {
-      case "first"  => (List(1, 2), "second")
+      case "first" => (List(1, 2), "second")
       case "second" => (List(3, 4, 5), "")
-      case _        => (List(6), "")
+      case _ => (List(6), "")
     }
   }
 
@@ -77,8 +77,7 @@ trait PagedSourceSpec extends BaseStreamSpec with ScalaFutures {
   }
 
   "PagedSource - IndexedStringPages" should {
-    val source = PagedSource[String, Int](1)(i =>
-      Future(PagedSource.Page(IndexedStringPages.page(i), Some(i + 1))))
+    val source = PagedSource[String, Int](1)(i => Future(PagedSource.Page(IndexedStringPages.page(i), Some(i + 1))))
     "return the items in the proper order" in {
       val result = source.take(4).runWith(Sink.seq)
       whenReady(result) { a =>

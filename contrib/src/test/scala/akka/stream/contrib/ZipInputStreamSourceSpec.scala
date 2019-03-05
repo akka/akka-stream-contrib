@@ -4,18 +4,16 @@
 
 package akka.stream.contrib
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
-import java.util.zip.{ ZipEntry, ZipInputStream, ZipOutputStream }
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
 import akka.stream.scaladsl.Keep
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestDuration
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class ZipInputStreamSourceSpecAutoFusingOn
-  extends { val autoFusing = true } with ZipInputStreamSourceSpec
-class ZipInputStreamSourceSpecAutoFusingOff
-  extends { val autoFusing = false } with ZipInputStreamSourceSpec
+class ZipInputStreamSourceSpecAutoFusingOn extends { val autoFusing = true } with ZipInputStreamSourceSpec
+class ZipInputStreamSourceSpecAutoFusingOff extends { val autoFusing = false } with ZipInputStreamSourceSpec
 
 trait ZipInputStreamSourceSpec extends BaseStreamSpec {
 
@@ -68,10 +66,7 @@ trait ZipInputStreamSourceSpec extends BaseStreamSpec {
     Await.result(totalBytesRead, 1.second.dilated) shouldBe (numFiles * fileSize)
   }
 
-  private def sampleZipFile(
-    numFiles:    Int,
-    sizePerFile: Int = 1024,
-    dirRatio:    Int = 4): ByteArrayInputStream = {
+  private def sampleZipFile(numFiles: Int, sizePerFile: Int = 1024, dirRatio: Int = 4): ByteArrayInputStream =
     withZos { zos =>
       (1 to numFiles).foreach(i1 => {
         val dirName = if (i1 > dirRatio) s"directory_${i1 / dirRatio}/" else ""
@@ -94,7 +89,6 @@ trait ZipInputStreamSourceSpec extends BaseStreamSpec {
         zos.closeEntry()
       })
     }
-  }
 
   private def withZos(f: ZipOutputStream => Unit) = {
     val baos = new ByteArrayOutputStream()
@@ -112,8 +106,7 @@ trait ZipInputStreamSourceSpec extends BaseStreamSpec {
   private def sampleFile(size: Int) = loremIpsum.take(size).toArray
 
   private def loremIpsum: Stream[Byte] =
-    Stream.concat(
-      """|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent auctor imperdiet
+    Stream.concat("""|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent auctor imperdiet
          |velit, eu dapibus nisl dapibus vitae. Sed quam lacus, fringilla posuere ligula at,
          |aliquet laoreet nulla. Aliquam id fermentum justo. Aliquam et massa consequat,
          |pellentesque dolor nec, gravida libero. Phasellus elit eros, finibus eget

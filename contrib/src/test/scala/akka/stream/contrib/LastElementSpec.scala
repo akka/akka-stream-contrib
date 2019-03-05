@@ -4,11 +4,11 @@
 
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{ Keep, Sink, Source }
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestDuration
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ Await, Future }
+import scala.concurrent.{Await, Future}
 
 class LastElementSpecAutoFusingOn extends { val autoFusing = true } with LastElementSpec
 class LastElementSpecAutoFusingOff extends { val autoFusing = false } with LastElementSpec
@@ -41,7 +41,8 @@ trait LastElementSpec extends BaseStreamSpec {
 
     "materialize to the last element emitted by a source before it failed" in {
       import system.dispatcher
-      val (lastElement, lastEmitted) = Source.fromIterator(() => Iterator.iterate(1)(n => if (n >= 3) sys.error("FAILURE") else n + 1))
+      val (lastElement, lastEmitted) = Source
+        .fromIterator(() => Iterator.iterate(1)(n => if (n >= 3) sys.error("FAILURE") else n + 1))
         .viaMat(LastElement())(Keep.right)
         .toMat(Sink.fold[Option[Int], Int](None)((_, o) => Some(o)))(Keep.both)
         .run()

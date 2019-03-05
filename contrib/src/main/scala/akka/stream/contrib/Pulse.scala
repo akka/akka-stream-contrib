@@ -21,7 +21,8 @@ import scala.concurrent.duration.FiniteDuration
  * @param initiallyOpen if `true` - emits the first available element before ''pulsing''
  * @tparam T type of element
  */
-final class Pulse[T](val interval: FiniteDuration, val initiallyOpen: Boolean = false) extends SimpleLinearGraphStage[T] {
+final class Pulse[T](val interval: FiniteDuration, val initiallyOpen: Boolean = false)
+    extends SimpleLinearGraphStage[T] {
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
     new TimerGraphStageLogic(shape) with InHandler with OutHandler {
 
@@ -34,9 +35,8 @@ final class Pulse[T](val interval: FiniteDuration, val initiallyOpen: Boolean = 
         startPulsing()
       }
 
-      override protected def onTimer(timerKey: Any): Unit = {
+      override protected def onTimer(timerKey: Any): Unit =
         if (isAvailable(out) && !isClosed(in) && !hasBeenPulled(in)) pull(in)
-      }
 
       private def startPulsing() = {
         pulsing = true

@@ -7,8 +7,8 @@ package akka.stream.contrib
 import akka.actor.ActorSystem
 import akka.pattern.after
 import akka.stream.ActorMaterializer
-import akka.stream.contrib.SwitchMode.{ Close, Open }
-import akka.stream.scaladsl.{ Keep, Sink, Source }
+import akka.stream.contrib.SwitchMode.{Close, Open}
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.testkit.scaladsl._
 import org.scalatest._
 import org.scalatest.Matchers._
@@ -68,7 +68,8 @@ class ValveSpec extends WordSpec with ScalaFutures {
     }
 
     "emit only 3 elements when the valve is switch to open/close/open" in {
-      val ((sourceProbe, switchFut), sinkProbe) = TestSource.probe[Int]
+      val ((sourceProbe, switchFut), sinkProbe) = TestSource
+        .probe[Int]
         .viaMat(Valve())(Keep.both)
         .toMat(TestSink.probe[Int])(Keep.both)
         .run()
@@ -135,7 +136,8 @@ class ValveSpec extends WordSpec with ScalaFutures {
     }
 
     "emit nothing when the source is failing" in {
-      val (switch, seq) = Source.failed(new IllegalArgumentException("Fake exception"))
+      val (switch, seq) = Source
+        .failed(new IllegalArgumentException("Fake exception"))
         .viaMat(Valve(SwitchMode.Close))(Keep.right)
         .toMat(Sink.seq)(Keep.both)
         .run()
@@ -147,7 +149,8 @@ class ValveSpec extends WordSpec with ScalaFutures {
 
     "not pull elements again when opened and closed and re-opened" in {
 
-      val (probe, switchFut, resultFuture) = TestSource.probe[Int]
+      val (probe, switchFut, resultFuture) = TestSource
+        .probe[Int]
         .viaMat(Valve(SwitchMode.Close))(Keep.both)
         .toMat(Sink.head)((l, r) => (l._1, l._2, r))
         .run()
@@ -257,7 +260,8 @@ class ValveSpec extends WordSpec with ScalaFutures {
     }
 
     "emit nothing when the source is failing" in {
-      val (switch, seq) = Source.failed(new IllegalArgumentException("Fake exception"))
+      val (switch, seq) = Source
+        .failed(new IllegalArgumentException("Fake exception"))
         .viaMat(Valve())(Keep.right)
         .toMat(Sink.seq)(Keep.both)
         .run()
@@ -269,7 +273,8 @@ class ValveSpec extends WordSpec with ScalaFutures {
 
     "not pull elements again when closed and re-opened" in {
 
-      val (probe, switchFut, resultFuture) = TestSource.probe[Int]
+      val (probe, switchFut, resultFuture) = TestSource
+        .probe[Int]
         .viaMat(Valve())(Keep.both)
         .toMat(Sink.head)((l, r) => (l._1, l._2, r))
         .run()

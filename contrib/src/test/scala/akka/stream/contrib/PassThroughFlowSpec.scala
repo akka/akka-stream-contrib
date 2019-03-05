@@ -5,7 +5,7 @@
 package akka.stream.contrib
 
 import akka.NotUsed
-import akka.stream.scaladsl.{ Flow, Keep, Source }
+import akka.stream.scaladsl.{Flow, Keep, Source}
 import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 

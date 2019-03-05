@@ -9,8 +9,8 @@ import java.util.concurrent.ThreadFactory
 import akka.event.LoggingAdapter
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
-import com.miguno.akka.testing.{ MockScheduler, VirtualTime }
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.miguno.akka.testing.{MockScheduler, VirtualTime}
+import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.concurrent.duration._
 
@@ -25,8 +25,7 @@ class AkkaMockScheduler extends {
 
 trait TimeWindowSpec extends BaseStreamSpec {
 
-  override def config = ConfigFactory.parseString(
-    s"""
+  override def config = ConfigFactory.parseString(s"""
       |akka.scheduler.implementation = ${classOf[AkkaMockScheduler].getName}
     """.stripMargin)
 
@@ -39,7 +38,8 @@ trait TimeWindowSpec extends BaseStreamSpec {
     "aggregate data for predefined amount of time" in {
       val summingWindow = TimeWindow(timeWindow, eager = false)(identity[Int])(_ + _)
 
-      val sub = Source.repeat(1)
+      val sub = Source
+        .repeat(1)
         .via(summingWindow)
         .runWith(TestSink.probe)
 
@@ -59,7 +59,8 @@ trait TimeWindowSpec extends BaseStreamSpec {
     "emit the first seed if eager" in {
       val summingWindow = TimeWindow(timeWindow, eager = true)(identity[Int])(_ + _)
 
-      val sub = Source.repeat(1)
+      val sub = Source
+        .repeat(1)
         .via(summingWindow)
         .runWith(TestSink.probe)
 

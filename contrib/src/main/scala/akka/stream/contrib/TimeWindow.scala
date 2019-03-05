@@ -10,6 +10,7 @@ import akka.stream.scaladsl.Flow
 import scala.concurrent.duration.FiniteDuration
 
 object TimeWindow {
+
   /**
    * Aggregates data for predefined amount of time. The computed aggregate is emitted after window expires, thereafter a new window starts.
    *

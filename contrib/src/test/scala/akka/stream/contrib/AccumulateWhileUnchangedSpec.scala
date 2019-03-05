@@ -4,8 +4,8 @@
 
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{ Keep, Source }
-import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
+import akka.stream.scaladsl.{Keep, Source}
+import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 
 import scala.collection.immutable
 import scala.collection.immutable.Seq
@@ -35,7 +35,8 @@ trait AccumulateWhileUnchangedSpec extends BaseStreamSpec {
     }
 
     "not emit any value for an empty source" in {
-      Source.empty[Element]
+      Source
+        .empty[Element]
         .via(AccumulateWhileUnchanged(_.value))
         .runWith(TestSink.probe)
         .request(42)
@@ -43,7 +44,8 @@ trait AccumulateWhileUnchangedSpec extends BaseStreamSpec {
     }
 
     "fail on upstream failure" in {
-      val (source, sink) = TestSource.probe[Element]
+      val (source, sink) = TestSource
+        .probe[Element]
         .via(AccumulateWhileUnchanged(_.value))
         .toMat(TestSink.probe)(Keep.both)
         .run()

@@ -4,9 +4,9 @@
 
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{ Sink, Source }
-import akka.stream.testkit.{ TestPublisher, TestSubscriber }
-import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
+import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.testkit.{TestPublisher, TestSubscriber}
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -26,24 +26,26 @@ class KeepAliveConcatSpec extends BaseStreamSpec {
   "keepAliveConcat" must {
 
     "not emit additional elements if upstream is fast enough" in {
-      Await.result(
-        sampleSource
-          .via(KeepAliveConcat(5, 1.second, expand))
-          .grouped(1000)
-          .runWith(Sink.head),
-        3.seconds).flatten should ===(1 to 10)
+      Await
+        .result(sampleSource
+                  .via(KeepAliveConcat(5, 1.second, expand))
+                  .grouped(1000)
+                  .runWith(Sink.head),
+                3.seconds)
+        .flatten should ===(1 to 10)
     }
 
     "emit elements periodically after silent periods" in {
       val sourceWithIdleGap = Source((1 to 5).grouped(3).toList) ++
-        Source((6 to 10).grouped(3).toList).initialDelay(2.second)
+      Source((6 to 10).grouped(3).toList).initialDelay(2.second)
 
-      Await.result(
-        sourceWithIdleGap
-          .via(KeepAliveConcat(5, 0.6.seconds, expand))
-          .grouped(1000)
-          .runWith(Sink.head),
-        3.seconds).flatten should ===(1 to 10)
+      Await
+        .result(sourceWithIdleGap
+                  .via(KeepAliveConcat(5, 0.6.seconds, expand))
+                  .grouped(1000)
+                  .runWith(Sink.head),
+                3.seconds)
+        .flatten should ===(1 to 10)
     }
 
     "immediately pull upstream" in {
@@ -102,4 +104,3 @@ class KeepAliveConcatSpec extends BaseStreamSpec {
   }
 
 }
-

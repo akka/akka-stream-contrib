@@ -4,9 +4,9 @@
 
 package akka.stream.contrib
 
-import akka.stream.stage.{ GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler }
-import akka.stream.{ Attributes, FlowShape, Inlet, Outlet }
-import scala.concurrent.{ Future, Promise }
+import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
+import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
+import scala.concurrent.{Future, Promise}
 
 /**
  * This companion defines a factory for [[LastElement]] instances, see [[LastElement.apply]].
@@ -49,23 +49,26 @@ final class LastElement[A] private extends GraphStageWithMaterializedValue[FlowS
 
       private var currentElement = Option.empty[A]
 
-      setHandler(in, new InHandler {
-        override def onPush() = {
-          val element = grab(in)
-          currentElement = Some(element)
-          push(out, element)
-        }
+      setHandler(
+        in,
+        new InHandler {
+          override def onPush() = {
+            val element = grab(in)
+            currentElement = Some(element)
+            push(out, element)
+          }
 
-        override def onUpstreamFinish() = {
-          matValue.success(currentElement)
-          super.onUpstreamFinish()
-        }
+          override def onUpstreamFinish() = {
+            matValue.success(currentElement)
+            super.onUpstreamFinish()
+          }
 
-        override def onUpstreamFailure(t: Throwable) = {
-          matValue.success(currentElement)
-          super.onUpstreamFinish()
+          override def onUpstreamFailure(t: Throwable) = {
+            matValue.success(currentElement)
+            super.onUpstreamFinish()
+          }
         }
-      })
+      )
 
       setHandler(out, new OutHandler {
         override def onPull() = pull(in)

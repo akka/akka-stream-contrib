@@ -4,16 +4,17 @@
 
 package akka.stream.contrib
 
-import akka.stream.stage.{ GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler }
+import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
 import akka.stream._
-import akka.stream.contrib.SwitchMode.{ Close, Open }
+import akka.stream.contrib.SwitchMode.{Close, Open}
 
-import scala.concurrent.{ Future, Promise }
+import scala.concurrent.{Future, Promise}
 
 /**
  * Pause/ Resume a Flow
  */
 sealed trait ValveSwitch {
+
   /**
    * Change the state of the valve
    *
@@ -31,6 +32,7 @@ sealed trait ValveSwitch {
 }
 
 object Valve {
+
   /**
    * Factory for [[Valve]] instances.
    *
@@ -72,12 +74,17 @@ final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[F
 
   override val shape = FlowShape(in, out)
 
-  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[ValveSwitch]) = {
+  override def createLogicAndMaterializedValue(
+      inheritedAttributes: Attributes
+  ): (GraphStageLogic, Future[ValveSwitch]) = {
     val logic = new ValveGraphStageLogic(shape, mode)
     (logic, logic.promise.future)
   }
 
-  private class ValveGraphStageLogic(shape: Shape, var mode: SwitchMode) extends GraphStageLogic(shape) with InHandler with OutHandler {
+  private class ValveGraphStageLogic(shape: Shape, var mode: SwitchMode)
+      extends GraphStageLogic(shape)
+      with InHandler
+      with OutHandler {
 
     val promise = Promise[ValveSwitch]
 
@@ -124,23 +131,20 @@ final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[F
 
     setHandlers(in, out, this)
 
-    override def onPush(): Unit = {
+    override def onPush(): Unit =
       if (isOpen) {
         push(out, grab(in))
       }
-    }
 
-    override def onPull(): Unit = {
+    override def onPull(): Unit =
       if (isOpen) {
         pull(in)
       }
-    }
 
     private def isOpen = mode == SwitchMode.Open
 
-    override def preStart() = {
+    override def preStart() =
       promise.success(switch)
-    }
   }
 
 }

@@ -43,15 +43,14 @@ object SourceRepeatEval {
       override def isCancelled: Boolean = stopped.get()
     }
 
-    def nextStep: Unit => Option[(Unit, A)] = {
-      _ =>
-        {
-          if (c.isCancelled) {
-            None
-          } else {
-            Some(() -> genElement())
-          }
+    def nextStep: Unit => Option[(Unit, A)] = { _ =>
+      {
+        if (c.isCancelled) {
+          None
+        } else {
+          Some(() -> genElement())
         }
+      }
     }
 
     Source

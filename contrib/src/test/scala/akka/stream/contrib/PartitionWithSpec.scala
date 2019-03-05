@@ -6,17 +6,16 @@ package akka.stream.contrib
 
 import akka.NotUsed
 import akka.stream.scaladsl._
-import akka.stream.{ ClosedShape, FanInShape2, FanOutShape2, FlowShape, Graph }
-import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
+import akka.stream.{ClosedShape, FanInShape2, FanOutShape2, FlowShape, Graph}
+import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 
 class PartitionWithSpecAutoFusingOn extends { val autoFusing = true } with PartitionWithSpec
 class PartitionWithSpecAutoFusingOff extends { val autoFusing = false } with PartitionWithSpec
 
 trait PartitionWithSpec extends BaseStreamSpec {
 
-  private def fanOutAndIn[I, X, Y, O, M](
-    fanOutGraph: Graph[FanOutShape2[I, X, Y], M],
-    fanInGraph:  Graph[FanInShape2[X, Y, O], NotUsed]): Flow[I, O, M] = {
+  private def fanOutAndIn[I, X, Y, O, M](fanOutGraph: Graph[FanOutShape2[I, X, Y], M],
+                                         fanInGraph: Graph[FanInShape2[X, Y, O], NotUsed]): Flow[I, O, M] =
     Flow.fromGraph(GraphDSL.create(fanOutGraph, fanInGraph)(Keep.left) { implicit builder => (fanOut, fanIn) =>
       import GraphDSL.Implicits._
 
@@ -25,12 +24,11 @@ trait PartitionWithSpec extends BaseStreamSpec {
 
       FlowShape(fanOut.in, fanIn.out)
     })
-  }
 
   private def zipFanOut[I, O1, O2, M](fanOutGraph: Graph[FanOutShape2[I, O1, O2], M]): Flow[I, (O1, O2), M] =
     fanOutAndIn(fanOutGraph, Zip[O1, O2])
 
-  private def mergeFanOut[I, O, M](fanOutGraph: Graph[FanOutShape2[I, O, O], M]): Flow[I, O, M] = {
+  private def mergeFanOut[I, O, M](fanOutGraph: Graph[FanOutShape2[I, O, O], M]): Flow[I, O, M] =
     Flow.fromGraph(GraphDSL.create(fanOutGraph) { implicit builder => fanOut =>
       import GraphDSL.Implicits._
 
@@ -41,17 +39,17 @@ trait PartitionWithSpec extends BaseStreamSpec {
 
       FlowShape(fanOut.in, mrg.out)
     })
-  }
 
   val flow = mergeFanOut(PartitionWith[Int, Int, Int] {
     case i if i % 2 == 0 => Left(i / 2)
-    case i               => Right(i * 3 - 1)
+    case i => Right(i * 3 - 1)
   })
 
   "PartitionWith" should {
     "partition ints according to their parity" in {
 
-      val (source, sink) = TestSource.probe[Int]
+      val (source, sink) = TestSource
+        .probe[Int]
         .via(flow)
         .toMat(TestSink.probe)(Keep.both)
         .run()
@@ -73,7 +71,8 @@ trait PartitionWithSpec extends BaseStreamSpec {
     }
 
     "fail on upstream failure" in {
-      val (source, sink) = TestSource.probe[Int]
+      val (source, sink) = TestSource
+        .probe[Int]
         .via(flow)
         .toMat(TestSink.probe)(Keep.both)
         .run()
@@ -92,7 +91,7 @@ trait PartitionWithSpec extends BaseStreamSpec {
 
         val pw = b.add(PartitionWith[Int, Int, Int] {
           case i if i % 2 == 0 => Left(i)
-          case i               => Right(i)
+          case i => Right(i)
         })
 
         src.out ~> pw.in
@@ -144,9 +143,8 @@ trait PartitionWithSpec extends BaseStreamSpec {
       val graph = GraphDSL.create(source, sink0, sink1)(Tuple3.apply) { implicit b => (src, snk0, snk1) =>
         import GraphDSL.Implicits._
 
-        val partition = b.add(PartitionWith[Int, Int, Int](
-          i => if (i % 2 == 0) Left(i) else Right(i),
-          eagerCancel = true))
+        val partition =
+          b.add(PartitionWith[Int, Int, Int](i => if (i % 2 == 0) Left(i) else Right(i), eagerCancel = true))
 
         src.out ~> partition.in
         partition.out0 ~> snk0.in
@@ -167,10 +165,10 @@ trait PartitionWithSpec extends BaseStreamSpec {
     "be callable on Flow and partition its output" in {
       import PartitionWith.Implicits._
 
-      val flow = zipFanOut(
-        Flow[Int].partitionWith(i => if (i % 2 == 0) Left(-i) else Right(i)))
+      val flow = zipFanOut(Flow[Int].partitionWith(i => if (i % 2 == 0) Left(-i) else Right(i)))
 
-      val (source, sink) = TestSource.probe[Int]
+      val (source, sink) = TestSource
+        .probe[Int]
         .via(flow)
         .toMat(TestSink.probe)(Keep.both)
         .run()

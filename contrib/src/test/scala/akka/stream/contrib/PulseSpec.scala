@@ -4,8 +4,8 @@
 
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{ Keep, Sink, Source }
-import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestDuration
 import org.scalatest.concurrent.ScalaFutures
 
@@ -20,7 +20,8 @@ trait PulseSpec extends BaseStreamSpec with ScalaFutures {
   "Pulse Stage" should {
 
     "signal demand once every interval" in {
-      val (probe, future) = TestSource.probe[Int]
+      val (probe, future) = TestSource
+        .probe[Int]
         .via(new Pulse[Int](pulseInterval.dilated))
         .toMat(Sink.seq)(Keep.both)
         .run()
@@ -56,7 +57,8 @@ trait PulseSpec extends BaseStreamSpec with ScalaFutures {
   "An initially-opened Pulse Stage" should {
 
     "emit the first available element" in {
-      val future = Source.repeat(1)
+      val future = Source
+        .repeat(1)
         .via(new Pulse[Int](pulseInterval.dilated, initiallyOpen = true))
         .initialTimeout(2.milliseconds.dilated)
         .runWith(Sink.headOption)
@@ -67,7 +69,8 @@ trait PulseSpec extends BaseStreamSpec with ScalaFutures {
     }
 
     "signal demand once every interval" in {
-      val (probe, future) = TestSource.probe[Int]
+      val (probe, future) = TestSource
+        .probe[Int]
         .via(new Pulse[Int](pulseInterval.dilated, initiallyOpen = true))
         .toMat(Sink.seq)(Keep.both)
         .run()

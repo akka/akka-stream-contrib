@@ -5,8 +5,8 @@
 package akka.stream.contrib
 
 import akka.japi.function
-import akka.stream.{ Attributes, FlowShape, Inlet, Outlet }
-import akka.stream.stage.{ GraphStage, GraphStageLogic, InHandler, OutHandler }
+import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
+import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
 
 /**
  * This companion defines a factory for [[Accumulate]] instances, see [[Accumulate.apply]].

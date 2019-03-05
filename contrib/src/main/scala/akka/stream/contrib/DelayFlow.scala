@@ -48,7 +48,8 @@ object DelayFlow {
    * @param strategySupplier creates new [[DelayStrategy]] object for each materialization
    * @see [[DelayStrategy]]
    */
-  def apply[T](strategySupplier: () => DelayStrategy[_ >: T]): Flow[T, T, NotUsed] = Flow.fromGraph(new DelayFlow[T](strategySupplier))
+  def apply[T](strategySupplier: () => DelayStrategy[_ >: T]): Flow[T, T, NotUsed] =
+    Flow.fromGraph(new DelayFlow[T](strategySupplier))
 
   object DelayStrategy {
 
@@ -70,11 +71,10 @@ object DelayFlow {
      * @param initialDelay initial delay for each of elements
      * @param maxDelay limits maximum delay
      */
-    def linearIncreasingDelay[T](
-      increaseStep:  FiniteDuration,
-      needsIncrease: T => Boolean,
-      initialDelay:  FiniteDuration = Duration.Zero,
-      maxDelay:      Duration       = Duration.Inf): DelayStrategy[T] = {
+    def linearIncreasingDelay[T](increaseStep: FiniteDuration,
+                                 needsIncrease: T => Boolean,
+                                 initialDelay: FiniteDuration = Duration.Zero,
+                                 maxDelay: Duration = Duration.Inf): DelayStrategy[T] = {
       require(increaseStep > Duration.Zero, "Increase step must be positive")
       require(maxDelay > initialDelay, "Max delay must be bigger than initial delay")
 
@@ -129,45 +129,44 @@ object DelayFlow {
  */
 final class DelayFlow[T](strategySupplier: () => DelayStrategy[_ >: T]) extends SimpleLinearGraphStage[T] {
 
-  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new TimerGraphStageLogic(shape) with InHandler with OutHandler {
+  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+    new TimerGraphStageLogic(shape) with InHandler with OutHandler {
 
-    private case object DelayTimerKey
+      private case object DelayTimerKey
 
-    private val strategy = strategySupplier()
+      private val strategy = strategySupplier()
 
-    private var delayedElem: AnyRef = _
+      private var delayedElem: AnyRef = _
 
-    override def onPush(): Unit = {
-      val elem = grab(in)
-      val delay = strategy.nextDelay(elem)
-      if (delay <= Duration.Zero) {
-        push(out, elem)
-      } else {
-        delayedElem = elem.asInstanceOf[AnyRef]
-        scheduleOnce(DelayTimerKey, delay)
+      override def onPush(): Unit = {
+        val elem = grab(in)
+        val delay = strategy.nextDelay(elem)
+        if (delay <= Duration.Zero) {
+          push(out, elem)
+        } else {
+          delayedElem = elem.asInstanceOf[AnyRef]
+          scheduleOnce(DelayTimerKey, delay)
+        }
       }
-    }
 
-    override def onPull(): Unit = {
-      pull(in)
-    }
+      override def onPull(): Unit =
+        pull(in)
 
-    override def onTimer(timerKey: Any): Unit = {
-      push(out, delayedElem.asInstanceOf[T])
-      delayedElem = null
-      if (isClosed(in)) {
-        completeStage()
+      override def onTimer(timerKey: Any): Unit = {
+        push(out, delayedElem.asInstanceOf[T])
+        delayedElem = null
+        if (isClosed(in)) {
+          completeStage()
+        }
       }
-    }
 
-    override def onUpstreamFinish(): Unit = {
-      if (!isTimerActive(DelayTimerKey)) {
-        completeStage()
-      }
-    }
+      override def onUpstreamFinish(): Unit =
+        if (!isTimerActive(DelayTimerKey)) {
+          completeStage()
+        }
 
-    setHandler(out, this)
-    setHandler(in, this)
-  }
+      setHandler(out, this)
+      setHandler(in, this)
+    }
 
 }

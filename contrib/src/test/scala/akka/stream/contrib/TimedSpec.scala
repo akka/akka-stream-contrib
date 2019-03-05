@@ -4,12 +4,12 @@
 
 package akka.stream.contrib
 
-import akka.stream.scaladsl.{ Flow, Sink, Source }
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.testkit.TestSubscriber
 import akka.testkit.TestProbe
-import org.reactivestreams.{ Publisher, Subscriber }
+import org.reactivestreams.{Publisher, Subscriber}
 
-import scala.concurrent.duration.{ Duration, FiniteDuration }
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class TimedSpecAutoFusingOn extends { val autoFusing = true } with TimedSpec
 class TimedSpecAutoFusingOff extends { val autoFusing = false } with TimedSpec
@@ -82,14 +82,13 @@ trait TimedSpec extends BaseStreamSpec {
 
       // making sure the types come out as expected
       val flow: Flow[Int, String, _] =
-        Flow[Int].
-          timed(_.
-            map(_.toDouble).
-            map(_.toInt).
-            map(_.toString), duration ⇒ probe.ref ! duration).
-          map { s: String ⇒ s + "!" }
+        Flow[Int].timed(_.map(_.toDouble).map(_.toInt).map(_.toString), duration ⇒ probe.ref ! duration).map {
+          s: String ⇒
+            s + "!"
+        }
 
-      val (flowIn: Subscriber[Int], flowOut: Publisher[String]) = flow.runWith(Source.asSubscriber[Int], Sink.asPublisher[String](false))
+      val (flowIn: Subscriber[Int], flowOut: Publisher[String]) =
+        flow.runWith(Source.asSubscriber[Int], Sink.asPublisher[String](false))
 
       val c1 = TestSubscriber.manualProbe[String]()
       val c2 = flowOut.subscribe(c1)
@@ -99,7 +98,9 @@ trait TimedSpec extends BaseStreamSpec {
 
       val s = c1.expectSubscription()
       s.request(200)
-      0 to 100 foreach { i ⇒ c1.expectNext(i.toString + "!") }
+      0 to 100 foreach { i ⇒
+        c1.expectNext(i.toString + "!")
+      }
       c1.expectComplete()
 
       val duration = probe.expectMsgType[Duration]

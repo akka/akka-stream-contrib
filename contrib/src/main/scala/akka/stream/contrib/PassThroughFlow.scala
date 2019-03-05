@@ -88,13 +88,10 @@ import akka.stream.scaladsl._
  *  }}}
  */
 object PassThroughFlow {
-  def apply[I, O](processingFlow: Flow[I, O, NotUsed]): Graph[FlowShape[I, (I, O)], NotUsed] = {
+  def apply[I, O](processingFlow: Flow[I, O, NotUsed]): Graph[FlowShape[I, (I, O)], NotUsed] =
     apply[I, O, (I, O)](processingFlow, Keep.both)
-  }
 
-  def apply[I, O, R](
-    processingFlow: Flow[I, O, NotUsed],
-    output:         (I, O) => R): Graph[FlowShape[I, R], NotUsed] = {
+  def apply[I, O, R](processingFlow: Flow[I, O, NotUsed], output: (I, O) => R): Graph[FlowShape[I, R], NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
@@ -111,5 +108,4 @@ object PassThroughFlow {
 
       FlowShape(broadcast.in, zip.out)
     })
-  }
 }
