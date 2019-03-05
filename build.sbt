@@ -20,11 +20,13 @@ organizationName := "Lightbend Inc."
 organizationHomepage := Some(url("http://www.lightbend.com"))
 homepage := Some(url("https://github.com/akka/akka-stream-contrib"))
 licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
-scmInfo := Some(ScmInfo(url("https://github.com/akka/akka-stream-contrib"), "git@github.com:akka/akka-stream-contrib.git"))
+scmInfo := Some(
+  ScmInfo(url("https://github.com/akka/akka-stream-contrib"), "git@github.com:akka/akka-stream-contrib.git")
+)
 developers += Developer("contributors",
-  "Contributors",
-  "https://gitter.im/akka/dev",
-  url("https://github.com/akka/akka-stream-contrib/graphs/contributors"))
+                        "Contributors",
+                        "https://gitter.im/akka/dev",
+                        url("https://github.com/akka/akka-stream-contrib/graphs/contributors"))
 
 publishTo := sonatypePublishTo.value
 publishMavenStyle := true
