@@ -5,7 +5,7 @@
 package akka.stream.contrib
 
 import akka.stream.scaladsl._
-import akka.stream.OverflowStrategies
+import akka.stream.OverflowStrategy
 import akka.stream.testkit.{ TestPublisher, TestSubscriber }
 import akka.stream.testkit.scaladsl.{ TestSink, TestSource }
 import scala.concurrent.duration.DurationInt
@@ -53,7 +53,7 @@ trait UnfoldFlowSpec extends BaseStreamSpec {
           case n               => (n * 3 + 1, n)
         }.recover {
           case `done` => (1, 1)
-        }.buffer(buffSize, OverflowStrategies.Backpressure))
+        }.buffer(buffSize, OverflowStrategy.backpressure))
 
         val sink = bufferedSource(10).runWith(TestSink.probe)
 

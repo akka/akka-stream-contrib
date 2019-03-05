@@ -6,7 +6,7 @@ package akka.stream.contrib
 
 import java.util.zip.{ ZipEntry, ZipInputStream }
 import akka.stream.Attributes.{ InputBuffer, name }
-import akka.stream.contrib.ZipInputStreamSource.{ DefaultAllowedZipExtensions, DefaultChunkSize, ZipEntryData }
+import akka.stream.contrib.ZipInputStreamSource.ZipEntryData
 import akka.stream.impl.Stages.DefaultAttributes.IODispatcher
 import akka.stream.scaladsl.Source
 import akka.stream.stage.{ GraphStageLogic, GraphStageWithMaterializedValue, OutHandler }
