@@ -61,6 +61,6 @@ testOptions in Test += Tests.Argument("-oDF")
 // -a Show stack traces and exception class name for AssertionErrors.
 testOptions += Tests.Argument(TestFrameworks.JUnit, "-v", "-a")
 
-headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>"))
-
 enablePlugins(AutomateHeaderPlugin)
+headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>"))
+scalafmtOnCompile := true
