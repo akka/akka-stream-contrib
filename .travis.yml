@@ -26,7 +26,6 @@ deploy:
 
 env:
   matrix:
-    - AKKA_SERIES=2.4
     - AKKA_SERIES=2.5
   global:
     - BINTRAY_USER=raboofje
