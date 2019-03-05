@@ -11,10 +11,7 @@ import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import scala.concurrent.duration.DurationInt
 import akka.util.Timeout
 
-class UnfoldFlowSpecAutoFusingOn extends { val autoFusing = true } with UnfoldFlowSpec
-class UnfoldFlowSpecAutoFusingOff extends { val autoFusing = false } with UnfoldFlowSpec
-
-trait UnfoldFlowSpec extends BaseStreamSpec {
+class UnfoldFlowSpec extends BaseStreamSpec {
   implicit val unfoldTimeout: Timeout = 300.millis
 
   "unfoldFlow" should {

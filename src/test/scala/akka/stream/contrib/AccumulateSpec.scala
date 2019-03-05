@@ -7,10 +7,7 @@ package akka.stream.contrib
 import akka.stream.scaladsl.{Keep, Source}
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 
-class AccumulateSpecAutoFusingOn extends { val autoFusing = true } with AccumulateSpec
-class AccumulateSpecAutoFusingOff extends { val autoFusing = false } with AccumulateSpec
-
-trait AccumulateSpec extends BaseStreamSpec {
+class AccumulateSpec extends BaseStreamSpec {
 
   "Accumulate" should {
     "emit folded vaules starting with the result of applying the given function to the given zero and the first pushed element" in {

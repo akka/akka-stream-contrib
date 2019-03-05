@@ -13,15 +13,7 @@ import org.scalatest.Matchers
 
 import scala.concurrent.duration.{FiniteDuration, _}
 
-class IntervalBasedRateLimiterAutoFusingOn extends {
-  val autoFusing = true
-} with IntervalBasedRateLimiterSpec
-
-class IntervalBasedRateLimiterAutoFusingOff extends {
-  val autoFusing = false
-} with IntervalBasedRateLimiterSpec
-
-trait IntervalBasedRateLimiterSpec extends IntervalBasedThrottlerTestKit {
+class IntervalBasedRateLimiterSpec extends IntervalBasedThrottlerTestKit {
 
   "IntervalBasedRateLimiter" should {
     "limit rate of messages" when {

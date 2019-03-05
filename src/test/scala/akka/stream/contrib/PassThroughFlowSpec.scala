@@ -10,7 +10,6 @@ import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 
 class PassThroughFlowSpec extends BaseStreamSpec {
-  override protected def autoFusing: Boolean = true
 
   "a stream via PassThroughFlow" should {
     "pass input elements alongside output" in {

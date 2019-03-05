@@ -10,7 +10,6 @@ import akka.stream.scaladsl.Keep
 import akka.stream.testkit.scaladsl.TestSink
 
 class SourceRepeatEvalSpec extends BaseStreamSpec {
-  override protected def autoFusing: Boolean = true
 
   "SourceRepeatEval" should {
     "generate elements" in {

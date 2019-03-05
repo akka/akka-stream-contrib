@@ -14,16 +14,13 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.concurrent.duration._
 
-class TimeWindowSpecAutoFusingOff extends { val autoFusing = false } with TimeWindowSpec
-class TimeWindowSpecAutoFusingOn extends { val autoFusing = true } with TimeWindowSpec
-
 class AkkaMockScheduler extends {
   val time = new VirtualTime
 } with MockScheduler(time) {
   def this(config: Config, adapter: LoggingAdapter, tf: ThreadFactory) = this()
 }
 
-trait TimeWindowSpec extends BaseStreamSpec {
+class TimeWindowSpec extends BaseStreamSpec {
 
   override def config = ConfigFactory.parseString(s"""
       |akka.scheduler.implementation = ${classOf[AkkaMockScheduler].getName}

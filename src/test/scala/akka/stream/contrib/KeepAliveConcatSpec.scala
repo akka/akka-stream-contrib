@@ -13,8 +13,6 @@ import scala.concurrent.duration._
 
 class KeepAliveConcatSpec extends BaseStreamSpec {
 
-  override protected def autoFusing = false
-
   val settings = ActorMaterializerSettings(system)
     .withInputBuffer(initialSize = 2, maxSize = 16)
 

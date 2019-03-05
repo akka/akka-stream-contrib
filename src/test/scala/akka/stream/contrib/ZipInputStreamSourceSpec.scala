@@ -12,10 +12,7 @@ import akka.testkit.TestDuration
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class ZipInputStreamSourceSpecAutoFusingOn extends { val autoFusing = true } with ZipInputStreamSourceSpec
-class ZipInputStreamSourceSpecAutoFusingOff extends { val autoFusing = false } with ZipInputStreamSourceSpec
-
-trait ZipInputStreamSourceSpec extends BaseStreamSpec {
+class ZipInputStreamSourceSpec extends BaseStreamSpec {
 
   "A ZipInputStreamSource" should {
     "emit as many chunks as files when files fit on the chunks" in {

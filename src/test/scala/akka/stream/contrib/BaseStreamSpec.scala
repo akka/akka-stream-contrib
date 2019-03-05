@@ -16,10 +16,7 @@ trait BaseStreamSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   protected implicit val system = {
     def systemConfig =
-      ConfigFactory
-        .parseString(s"akka.stream.materializer.auto-fusing=$autoFusing")
-        .withFallback(config)
-        .withFallback(ConfigFactory.load())
+      config.withFallback(ConfigFactory.load())
     ActorSystem("default", systemConfig)
   }
 
@@ -30,6 +27,5 @@ trait BaseStreamSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     super.afterAll()
   }
 
-  protected def autoFusing: Boolean
   protected def config: Config = ConfigFactory.empty()
 }

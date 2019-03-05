@@ -9,11 +9,7 @@ import akka.stream.scaladsl.{Flow, Keep, Source}
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import scala.concurrent.duration._
 
-class FeedbackLoopSpecAutoFusingOn extends { val autoFusing = true } with FeedbackLoopSpec
-
-class FeedbackLoopSpecAutoFusingOff extends { val autoFusing = false } with FeedbackLoopSpec
-
-trait FeedbackLoopSpec extends BaseStreamSpec {
+class FeedbackLoopSpec extends BaseStreamSpec {
 
   "Feedback" should {
     "not deadlock on slow downstream" in {

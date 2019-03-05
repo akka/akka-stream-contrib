@@ -10,10 +10,7 @@ import akka.testkit.TestDuration
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
-class LastElementSpecAutoFusingOn extends { val autoFusing = true } with LastElementSpec
-class LastElementSpecAutoFusingOff extends { val autoFusing = false } with LastElementSpec
-
-trait LastElementSpec extends BaseStreamSpec {
+class LastElementSpec extends BaseStreamSpec {
 
   "A stream via LastElement" should {
     "materialize to the last element emitted by a finite nonempty successful source" in {

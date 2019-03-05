@@ -11,10 +11,7 @@ import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
-class RetrySpecAutoFusingOn extends { val autoFusing = true } with RetrySpec
-class RetrySpecAutoFusingOff extends { val autoFusing = false } with RetrySpec
-
-trait RetrySpec extends BaseStreamSpec {
+class RetrySpec extends BaseStreamSpec {
 
   val failedElem: Try[Int] = Failure(new Exception("cooked failure"))
   def flow[T] = Flow.fromFunction[(Int, T), (Try[Int], T)] {

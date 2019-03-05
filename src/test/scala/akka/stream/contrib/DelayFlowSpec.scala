@@ -11,10 +11,7 @@ import akka.stream.testkit.scaladsl.TestSink
 import scala.concurrent.duration._
 import akka.testkit._
 
-class DelayFlowSpecAutoFusingOn extends { val autoFusing = true } with DelayFlowSpec
-class DelayFlowSpecAutoFusingOff extends { val autoFusing = false } with DelayFlowSpec
-
-trait DelayFlowSpec extends BaseStreamSpec {
+class DelayFlowSpec extends BaseStreamSpec {
 
   "DelayFlow" should {
 

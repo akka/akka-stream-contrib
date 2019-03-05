@@ -9,10 +9,7 @@ import akka.stream.scaladsl._
 import akka.stream.{ClosedShape, FanInShape2, FanOutShape2, FlowShape, Graph}
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 
-class PartitionWithSpecAutoFusingOn extends { val autoFusing = true } with PartitionWithSpec
-class PartitionWithSpecAutoFusingOff extends { val autoFusing = false } with PartitionWithSpec
-
-trait PartitionWithSpec extends BaseStreamSpec {
+class PartitionWithSpec extends BaseStreamSpec {
 
   private def fanOutAndIn[I, X, Y, O, M](fanOutGraph: Graph[FanOutShape2[I, X, Y], M],
                                          fanInGraph: Graph[FanInShape2[X, Y, O], NotUsed]): Flow[I, O, M] =

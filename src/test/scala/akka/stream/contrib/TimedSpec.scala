@@ -11,10 +11,7 @@ import org.reactivestreams.{Publisher, Subscriber}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-class TimedSpecAutoFusingOn extends { val autoFusing = true } with TimedSpec
-class TimedSpecAutoFusingOff extends { val autoFusing = false } with TimedSpec
-
-trait TimedSpec extends BaseStreamSpec {
+class TimedSpec extends BaseStreamSpec {
 
   "Timed Source" should {
 

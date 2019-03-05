@@ -11,10 +11,7 @@ import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.duration._
 
-class PulseSpecAutoFusingOff extends { val autoFusing = false } with PulseSpec
-class PulseSpecAutoFusingOn extends { val autoFusing = true } with PulseSpec
-
-trait PulseSpec extends BaseStreamSpec with ScalaFutures {
+class PulseSpec extends BaseStreamSpec with ScalaFutures {
   private val pulseInterval = 20.milliseconds
 
   "Pulse Stage" should {

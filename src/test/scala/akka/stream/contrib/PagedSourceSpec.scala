@@ -48,11 +48,7 @@ object PagedSourceSpec {
 
 }
 
-class PagedSourceSpecAutoFusingOn extends { val autoFusing = true } with PagedSourceSpec
-
-class PagedSourceSpecAutoFusingOff extends { val autoFusing = false } with PagedSourceSpec
-
-trait PagedSourceSpec extends BaseStreamSpec with ScalaFutures {
+class PagedSourceSpec extends BaseStreamSpec with ScalaFutures {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 

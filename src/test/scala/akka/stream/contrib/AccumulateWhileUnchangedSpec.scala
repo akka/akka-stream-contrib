@@ -11,15 +11,7 @@ import scala.collection.immutable
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 
-class AccumulateWhileUnchangedSpecAutoFusingOn extends {
-  val autoFusing = true
-} with AccumulateWhileUnchangedSpec
-
-class AccumulateWhileUnchangedSpecAutoFusingOff extends {
-  val autoFusing = false
-} with AccumulateWhileUnchangedSpec
-
-trait AccumulateWhileUnchangedSpec extends BaseStreamSpec {
+class AccumulateWhileUnchangedSpec extends BaseStreamSpec {
 
   "AccumulateWhileUnchanged" should {
 
