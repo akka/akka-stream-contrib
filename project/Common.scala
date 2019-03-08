@@ -10,6 +10,7 @@ import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import sbt.Package.ManifestAttributes
 
 object Common extends AutoPlugin {
 
@@ -24,7 +25,8 @@ object Common extends AutoPlugin {
   override lazy val projectSettings = SbtScalariform.scalariformSettings ++ Seq(
     organization := "com.typesafe.akka",
     organizationName := "Lightbend Inc.",
-
+    packageOptions := Seq(ManifestAttributes(
+                      ("Automatic-Module-Name", "akka-stream-contrib"))),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
 
     crossVersion := CrossVersion.binary,
