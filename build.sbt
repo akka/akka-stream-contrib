@@ -30,6 +30,7 @@ developers += Developer("contributors",
 
 publishTo := sonatypePublishTo.value
 publishMavenStyle := true
+sonatypeProfileName := "com.typesafe"
 isSnapshot := !isVersionStable.value // publish all stable versions as non-snapshots
 pgpPublicRing := file("ci-keys/pubring.asc")
 pgpSecretRing := file("ci-keys/secring.asc")
