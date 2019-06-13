@@ -1,10 +1,10 @@
 organization := "com.typesafe.akka"
 name := "akka-stream-contrib"
 
-crossScalaVersions := Seq("2.12.8", "2.11.12")
+crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12")
 scalaVersion := crossScalaVersions.value.head
 
-val AkkaVersion = "2.5.21"
+val AkkaVersion = "2.5.23"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
@@ -12,8 +12,8 @@ libraryDependencies ++= Seq(
   "junit" % "junit" % "4.12" % Test, // Common Public License 1.0
   "com.novocode" % "junit-interface" % "0.11" % Test, // BSD-like
   "com.google.jimfs" % "jimfs" % "1.1" % Test, // ApacheV2
-  "org.scalatest" %% "scalatest" % "3.0.6" % Test, // ApacheV2
-  "com.miguno.akka" %% "akka-mock-scheduler" % "0.5.4" % Test // ApacheV2
+  "org.scalatest" %% "scalatest" % "3.0.8" % Test, // ApacheV2
+  "com.miguno.akka" %% "akka-mock-scheduler" % "0.5.5" % Test // ApacheV2
 )
 
 organizationName := "Lightbend Inc."
@@ -36,19 +36,24 @@ pgpPublicRing := file("ci-keys/pubring.asc")
 pgpSecretRing := file("ci-keys/secring.asc")
 pgpPassphrase := sys.env.get("PGP_PASS").map(_.toCharArray)
 
-scalacOptions ++= Seq(
-  "-encoding",
-  "UTF-8",
-  "-feature",
-  "-unchecked",
-  "-deprecation",
-  //"-Xfatal-warnings",
-  "-Xlint",
-  "-Yno-adapted-args",
-  "-Ywarn-dead-code",
-  "-Ywarn-numeric-widen",
-  "-Xfuture"
-)
+scalacOptions ++=
+  Seq("-encoding", "UTF-8", "-feature", "-unchecked", "-deprecation", "-Xlint") ++ (
+    if (scalaVersion.value startsWith "2.13.")
+      Seq(
+        "-Wdead-code",
+        "-Wnumeric-widen",
+        "-Xsource:2.14"
+      )
+    else
+      Seq(
+        //"-Xfatal-warnings",
+        "-Xlint",
+        "-Yno-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-numeric-widen",
+        "-Xfuture"
+      )
+  )
 
 // By default scalatest futures time out in 150 ms, dilate that to 600ms.
 // This should not impact the total test time as we don't expect to hit this
