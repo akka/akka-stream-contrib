@@ -113,7 +113,7 @@ final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Eleme
       super.preStart()
       maxDuration match {
         case Some(max) => schedulePeriodically(None, max)
-        case None => Unit
+        case None => ()
       }
     }
     override def postStop(): Unit =
@@ -137,7 +137,7 @@ final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Eleme
         case Some(next) =>
           buffer += next
           nbElements += 1
-        case None => Unit
+        case None => ()
       }
 
       currentState = nextState
