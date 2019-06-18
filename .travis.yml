@@ -23,15 +23,15 @@ jobs:
       name: "Run tests for all Scala versions"
 
     - stage: publish-211
-      env: CMD="++2.11.12 publishSigned sonatypeRelease"
+      env: CMD="++2.11.12 release"
       name: "Publish artifacts for Scala 2.11 to Sonatype and release"
 
     - stage: publish-212
-      env: CMD="++2.12.8 publishSigned sonatypeRelease"
+      env: CMD="++2.12.8 release"
       name: "Publish artifacts for Scala 2.12 to Sonatype and release"
 
     - stage: publish-213
-      env: CMD="++2.13.0 publishSigned sonatypeRelease"
+      env: CMD="++2.13.0 release"
       name: "Publish artifacts for Scala 2.13 to Sonatype and release"
 
 stages:
