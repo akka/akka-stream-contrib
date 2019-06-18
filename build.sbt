@@ -70,3 +70,5 @@ testOptions += Tests.Argument(TestFrameworks.JUnit, "-v", "-a")
 enablePlugins(AutomateHeaderPlugin)
 headerLicense := Some(HeaderLicense.Custom(s"Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>"))
 scalafmtOnCompile := true
+
+addCommandAlias("release", ";publishSigned ;sonatypeRelease")
