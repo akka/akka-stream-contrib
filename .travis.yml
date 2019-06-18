@@ -22,11 +22,17 @@ jobs:
       env: CMD=+test
       name: "Run tests for all Scala versions"
 
-    - stage: publish
-      env: CMD="+publishSigned"
-      name: "Publish artifacts for all Scala versions to Sonatype staging"
-    - env: CMD="sonatypeRelease"
-      name: "Close and release staging repository"
+    - stage: publish-211
+      env: CMD="++2.11.12 publishSigned sonatypeRelease"
+      name: "Publish artifacts for Scala 2.11 to Sonatype and release"
+
+    - stage: publish-212
+      env: CMD="++2.12.8 publishSigned sonatypeRelease"
+      name: "Publish artifacts for Scala 2.12 to Sonatype and release"
+
+    - stage: publish-213
+      env: CMD="++2.13.0 publishSigned sonatypeRelease"
+      name: "Publish artifacts for Scala 2.13 to Sonatype and release"
 
 stages:
   # runs on master commits and PRs
@@ -38,7 +44,15 @@ stages:
     if: NOT tag =~ ^v
 
   # runs on main repo master commits or version-tagged commits
-  - name: publish
+  - name: publish-211
+    if: repo = akka/akka-stream-contrib AND ( ( branch = master AND type = push ) OR tag =~ ^v )
+
+  # runs on main repo master commits or version-tagged commits
+  - name: publish-212
+    if: repo = akka/akka-stream-contrib AND ( ( branch = master AND type = push ) OR tag =~ ^v )
+
+  # runs on main repo master commits or version-tagged commits
+  - name: publish-213
     if: repo = akka/akka-stream-contrib AND ( ( branch = master AND type = push ) OR tag =~ ^v )
 
 before_cache:
