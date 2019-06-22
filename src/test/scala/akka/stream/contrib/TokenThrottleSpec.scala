@@ -58,7 +58,7 @@ class TokenThrottleSpec extends WordSpec with MustMatchers with ScalaFutures {
       val tokens = Source.repeat(1L).alsoTo(Sink.foreach(_ => tokenAsked.incrementAndGet()))
 
       val sum = Source
-        .fromIterator(() => LazyList.from(1, 1).iterator)
+        .fromIterator(() => Stream.from(1, 1).iterator)
         .take(40)
         .via(TokenThrottle(tokens)(_.toLong))
         .runWith(Sink.fold(0)(_ + _))
