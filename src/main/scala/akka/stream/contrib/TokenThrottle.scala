@@ -77,14 +77,12 @@ final class TokenThrottle[A](costCalculation: A => Long) extends GraphStage[FanI
     var elemsCompleted = false
 
     private def maybeEmit(): Unit =
-      if (tokensExhaused) {
-        completeStage()
-      } else if (isAvailable(out) && buffer.isDefined) {
+      if (isAvailable(out) && buffer.isDefined) {
         if (tokens >= cost) {
           tokens -= cost
           push(out, buffer.get)
           buffer = none
-          if (elemsCompleted || tokensExhaused) {
+          if (elemsCompleted || tokensExhausted) {
             completeStage()
           } else {
             pull(elemsIn)
@@ -95,7 +93,7 @@ final class TokenThrottle[A](costCalculation: A => Long) extends GraphStage[FanI
         }
       }
 
-    private def tokensExhaused = tokensCompleted && tokens == 0
+    private def tokensExhausted = tokensCompleted && tokens == 0
 
     private def askForTokens(): Unit = if (!tokensCompleted && !hasBeenPulled(tokensIn)) pull(tokensIn)
 
@@ -131,8 +129,8 @@ final class TokenThrottle[A](costCalculation: A => Long) extends GraphStage[FanI
         }
 
         override def onUpstreamFinish(): Unit = {
+          if (tokens == 0) completeStage()
           tokensCompleted = true
-          maybeEmit()
         }
       }
     )
