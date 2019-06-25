@@ -18,26 +18,26 @@ import akka.util.OptionVal._
  * Tokens are consumed as-needed, and pre-fetched once the internal token buffer is empty. Also, an initial fetch is
  * performed to initially fill the internal token bucket.
  *
- * '''Emits when''' when an input element <em>e</em> is available and <em>costCalculation(e)</em> tokens are available.
+ * '''Emits when''' an input element <em>e</em> is available and <em>costCalculation(e)</em> tokens are available
  *
  * '''Backpressures when''' downstream backpressures, or when not enough tokens are available for the next element. For
- * the token input: when no tokens are needed (tokens are pulled as needed).
+ * the token input: when no tokens are needed (tokens are pulled as needed)
  *
- * '''Completes when''' a) element upstream completes, or b) when token upstream completes and all internally stored
- * tokens were consumed (best effort; also completes when the next element cost is higher than the available tokens).
+ * '''Completes when''' upstream completes, and also when token source completes and all internally stored tokens were
+ * consumed (best effort; also completes when the next element cost is higher than the available tokens)
  *
- * '''Cancels when''' downstream cancels.
+ * '''Cancels when''' downstream cancels
  */
 object TokenThrottle {
 
   /**
    * Creates a token-based throttling flow.
    *
-   * @param tokenSource source of tokens to use for controlling throughput.
+   * @param tokenSource source of tokens to use for controlling throughput
    * @param costCalculation cost function that determines the cost of a given element
    * @tparam A element type
    * @tparam M materialized value of token source
-   * @return simple token throttle graph.
+   * @return simple token throttle graph
    */
   def apply[A, M](tokenSource: Graph[SourceShape[Long], M])(costCalculation: A => Long): Graph[FlowShape[A, A], M] =
     GraphDSL.create(tokenSource) { implicit b => tokens =>

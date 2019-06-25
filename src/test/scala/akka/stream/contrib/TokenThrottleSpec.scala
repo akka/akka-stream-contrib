@@ -34,7 +34,7 @@ class TokenThrottleSpec extends WordSpec with MustMatchers with ScalaFutures {
       elems.sendNext(2)
       out.requestNext() mustBe 2
       elems.sendNext(3)
-      out.expectNoMessage(100.millis)
+      an[AssertionError] shouldBe thrownBy(out.requestNext(100.millis)) // expect element to be blocked
       tokens.sendNext(1)
       out.requestNext() mustBe 3
     }
