@@ -92,6 +92,37 @@ class TokenThrottleSpec extends WordSpec with MustMatchers with ScalaFutures {
       elems.sendComplete()
       out.expectComplete()
     }
+
+    "completes if element is buffered and token source completes with too few remaining tokens" in {
+      val ((elems, tokens), out) = TestSource
+        .probe[Int]
+        .viaMat(TokenThrottle(TestSource.probe[Long])(_ => 5))(Keep.both)
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      tokens.sendNext(8)
+      elems.sendNext(1)
+      elems.sendNext(2)
+      out.requestNext() mustBe 1
+      tokens.sendComplete()
+      out.expectComplete()
+    }
+
+    "asks for tokens to satisfy current item cost even if downstream did not yet request" in {
+      val ((elems, tokens), out) = TestSource
+        .probe[Int]
+        .viaMat(TokenThrottle(TestSource.probe[Long])(_ => 100))(Keep.both)
+        .toMat(TestSink.probe)(Keep.both)
+        .run()
+
+      elems.sendNext(1)
+      for (_ <- 1 to 100) {
+        if (tokens.pending == 0) tokens.expectRequest()
+        tokens.pending mustBe >=(1L)
+        tokens.sendNext(1)
+      }
+      out.requestNext() mustBe 1
+    }
   }
 
   def throttledGraph: (TestPublisher.Probe[Int], TestPublisher.Probe[Long], TestSubscriber.Probe[Int]) = {
