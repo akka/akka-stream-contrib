@@ -37,7 +37,7 @@ final class ZipToStreamFlow(bufferSize: Int) extends GraphStage[FlowShape[ZipToS
     new GraphStageLogic(shape) with StageLogging {
       private val buffer = new ZipBuffer(bufferSize)
       private var currentStream: Option[InputStream] = None
-      private var emptyStream = false
+      private var emptyStream = true
 
       setHandler(
         out,
