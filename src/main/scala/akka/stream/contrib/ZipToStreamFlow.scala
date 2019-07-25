@@ -45,7 +45,6 @@ final class ZipToStreamFlow(bufferSize: Int) extends GraphStage[FlowShape[ZipToS
           override def onPull(): Unit =
             if (isClosed(in)) {
               if (buffer.isEmpty) {
-                emptyStream = true
                 completeStage()
               } else {
                 buffer.close
