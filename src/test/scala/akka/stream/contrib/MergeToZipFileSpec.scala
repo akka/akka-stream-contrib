@@ -21,7 +21,7 @@ class MergeToZipFileSpec extends BaseStreamSpec with ScalaFutures {
   "MergeToZipFileFlow" should {
 
     "merge file to zip file" in {
-      val inputFiles = generateInputFiles(5, 1000)
+      val inputFiles = generateInputFiles(5, 100)
       val inputStream = filesToStream(inputFiles)
 
       val akkaZipped: Future[ByteString] =
