@@ -119,7 +119,7 @@ final class ZipToStreamFlow(bufferSize: Int) extends GraphStage[FlowShape[ZipToS
             }
           }
 
-        result.iterator
+        result.iterator.filter(_.nonEmpty)
       }
     }
 }
