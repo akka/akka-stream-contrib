@@ -27,7 +27,7 @@ jobs:
       name: "Publish artifacts for Scala 2.11 to Sonatype and release"
 
     - stage: publish-212
-      env: CMD="++2.12.8! release"
+      env: CMD="++2.12.9! release"
       name: "Publish artifacts for Scala 2.12 to Sonatype and release"
 
     - stage: publish-213
