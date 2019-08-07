@@ -1,7 +1,7 @@
 organization := "com.typesafe.akka"
 name := "akka-stream-contrib"
 
-crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12")
+crossScalaVersions := Seq("2.13.0", "2.12.9", "2.11.12")
 scalaVersion := crossScalaVersions.value.head
 
 val AkkaVersion = "2.5.23"
