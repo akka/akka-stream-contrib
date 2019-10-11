@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+ */
+
 package akka.stream.contrib
 
 import akka.stream.impl.Stages.DefaultAttributes
@@ -125,7 +129,7 @@ final class MergeByIndex[T](val inputPorts: Int, index: T => Long) extends Graph
         // Optimization: check this only if inlet is closed.
         if (bufferedClosedInlets.contains(inletIndex)) {
           // in case this inlet was closed and data was buffered, it isn't any more now.
-          bufferedClosedInlets.subtractOne(inletIndex)
+          bufferedClosedInlets.remove(inletIndex)
           updateMaxBufferLength()
         }
       }
@@ -152,13 +156,13 @@ final class MergeByIndex[T](val inputPorts: Int, index: T => Long) extends Graph
         val elem = grab(in)
         val elemIndex = index(elem)
         verifyElementIndex(elemIndex, in)
-        buffer.addOne((elem, elemIndex, pos))
+        buffer.enqueue((elem, elemIndex, pos))
         if (isAvailable(out)) maybeEmit()
       }
 
       override def onUpstreamFinish(): Unit = {
         // for properly handling index omissions we need to remember how many items from closed inlets are buffered.
-        if (buffer.exists(_._3 == pos)) bufferedClosedInlets.addOne(pos)
+        if (buffer.exists(_._3 == pos)) bufferedClosedInlets.add(pos)
         updateMaxBufferLength()
         if (isAvailable(out)) maybeEmit() // a finished upstream may unblock emitting.
         else if (noMoreDataExpected) completeStage()

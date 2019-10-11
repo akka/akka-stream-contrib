@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+ */
+
 package akka.stream.contrib
 
 import akka.NotUsed
@@ -107,7 +111,7 @@ class MergeByIndexSpec extends WordSpec with MustMatchers with ScalaFutures {
       val flow = Flow.fromGraph(GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] =>
         import GraphDSL.Implicits._
 
-        val partition = builder.add(Partition[Long](branchCount, _ => Random.between(0, branchCount)))
+        val partition = builder.add(Partition[Long](branchCount, _ => Random.nextInt(branchCount)))
         val merge = builder.add(MergeByIndex(branchCount, identity[Long]))
         val buffer = Flow[Long].buffer(3 * inputLength / branchCount, OverflowStrategy.backpressure)
 
@@ -117,7 +121,7 @@ class MergeByIndexSpec extends WordSpec with MustMatchers with ScalaFutures {
       })
 
       for (_ <- 1 to testRepetitions) {
-        val input = List.tabulate(inputLength)(_.toLong).filterNot(_ => Random.between(0, 5) == 0) // add random gaps
+        val input = List.tabulate(inputLength)(_.toLong).filterNot(_ => Random.nextInt(5) == 0) // add random gaps
         val output = Source(input).via(flow).runWith(Sink.seq).futureValue
         output mustBe input
       }
