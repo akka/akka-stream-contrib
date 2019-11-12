@@ -98,27 +98,27 @@ final class MergeByIndex[T](val inputPorts: Int, index: T => Long) extends Graph
       if (buffer.nonEmpty) {
         if (buffer.head._2 == expectedIndex) {
           emitAndPull(buffer.dequeue())
-        } else if (dataFromAllInletsBuffered) {
-          // if all inlets pushed data and we didn't find the expected index, we know this is an index omission.
+        } else if (elementsFromAllInletsBuffered) {
+          // if all inlets pushed elements and we didn't find the expected index, we know this is an index omission.
           // it is therefore fine and necessary to emit the element with the smallest index seen.
           emitAndPull(buffer.dequeue())
         }
       }
 
-      if (noMoreDataExpected) completeStage()
+      if (noMoreElementsExpected) completeStage()
     }
 
-    private def dataFromAllInletsBuffered = buffer.length == maxBufferLength
+    private def elementsFromAllInletsBuffered = buffer.length == maxBufferLength
 
     private def updateMaxBufferLength(): Unit =
-      // needs to account for open inlets and data of closed inlets that is already buffered.
-      // only if this amount of items are in the buffer, we have received data from all upstreams and it is safe
+      // needs to account for open inlets and elements of closed inlets that is already buffered.
+      // only if this amount of elements are in the buffer, we have received an element from each upstream and it is safe
       // to deduce an index omission.
       maxBufferLength = in.count(i => !isClosed(i)) + bufferedClosedInlets.size
 
-    private def noMoreDataExpected = maxBufferLength == 0
+    private def noMoreElementsExpected = maxBufferLength == 0
 
-    private def emitAndPull(queueElem: (T, Long, Int)): Unit = {
+    private def emitAndPull(queueElem: QueueT): Unit = {
       val (elem, index, inletIndex) = queueElem
       val inlet = in(inletIndex)
       verifyElementIndex(index, inlet)
@@ -128,7 +128,7 @@ final class MergeByIndex[T](val inputPorts: Int, index: T => Long) extends Graph
       } else {
         // Optimization: check this only if inlet is closed.
         if (bufferedClosedInlets.contains(inletIndex)) {
-          // in case this inlet was closed and data was buffered, it isn't any more now.
+          // in case this inlet was closed and an element was buffered, it isn't any more now.
           bufferedClosedInlets.remove(inletIndex)
           updateMaxBufferLength()
         }
@@ -161,11 +161,11 @@ final class MergeByIndex[T](val inputPorts: Int, index: T => Long) extends Graph
       }
 
       override def onUpstreamFinish(): Unit = {
-        // for properly handling index omissions we need to remember how many items from closed inlets are buffered.
+        // for properly handling index omissions we need to remember how many elements from closed inlets are buffered.
         if (buffer.exists(_._3 == pos)) bufferedClosedInlets.add(pos)
         updateMaxBufferLength()
         if (isAvailable(out)) maybeEmit() // a finished upstream may unblock emitting.
-        else if (noMoreDataExpected) completeStage()
+        else if (noMoreElementsExpected) completeStage()
       }
     }
 
