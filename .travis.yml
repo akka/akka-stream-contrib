@@ -11,8 +11,8 @@ jobs:
       name: "Code style check (fixed with `sbt Test/compile`)"
     - script: sbt scalafmtSbtCheck || { echo "[error] Unformatted sbt code found. Please run 'scalafmtSbt' and commit the reformatted code."; false; }
       name: "Build code style check (fixed with `sbt scalafmtSbt`)"
-    - env: CMD="++2.11.12 Test/compile"
-      name: "Compile all tests (with Scala 2.11)"
+    - env: CMD="++2.12.9 Test/compile"
+      name: "Compile all tests (with Scala 2.12)"
     - env: CMD="++2.13.0 Test/compile"
       name: "Compile all tests (with Scala 2.13)"
     - env: CMD="doc"
@@ -21,10 +21,6 @@ jobs:
     - stage: test
       env: CMD=+test
       name: "Run tests for all Scala versions"
-
-    - stage: publish-211
-      env: CMD="++2.11.12! release"
-      name: "Publish artifacts for Scala 2.11 to Sonatype and release"
 
     - stage: publish-212
       env: CMD="++2.12.9! release"
@@ -42,11 +38,7 @@ stages:
   # runs on master commits and PRs
   - name: test
     if: NOT tag =~ ^v
-
-  # runs on main repo master commits or version-tagged commits
-  - name: publish-211
-    if: repo = akka/akka-stream-contrib AND ( ( branch = master AND type = push ) OR tag =~ ^v )
-
+  
   # runs on main repo master commits or version-tagged commits
   - name: publish-212
     if: repo = akka/akka-stream-contrib AND ( ( branch = master AND type = push ) OR tag =~ ^v )
