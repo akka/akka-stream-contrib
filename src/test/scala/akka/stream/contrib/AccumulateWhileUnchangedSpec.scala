@@ -63,17 +63,17 @@ class AccumulateWhileUnchangedSpec extends BaseStreamSpec {
     }
 
     "used with maxDuration" should {
-      "emmit after maxDuration or when the property changes" in {
+      "emit after maxDuration or when the property changes" in {
         val (src, sink) = TestSource
           .probe[Element]
-          .via(AccumulateWhileUnchanged(_.value, maxDuration = Some(50.millis)))
+          .via(AccumulateWhileUnchanged(_.value, maxDuration = Some(500.millis)))
           .toMat(TestSink.probe[Seq[Element]])(Keep.both)
           .run()
 
         sink.request(42)
         SampleElements.Ones.foreach(src.sendNext)
-        sink.expectNoMsg(30.millis)
-        sink.expectNext(50.millis, SampleElements.Ones)
+        sink.expectNoMsg(300.millis)
+        sink.expectNext(SampleElements.Ones)
         src.sendComplete()
         sink.expectComplete()
       }
