@@ -16,6 +16,8 @@ This project provides a home to Akka Streams add-ons which does not fit into the
 * it is an experiment or requires iterations with user feedback before including into the stable core module
 * it requires a faster release cycle
 
+This repository is not released as a binary artifact and only shared as sources.
+
 Caveat Emptor
 -------------
 
