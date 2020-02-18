@@ -4,8 +4,13 @@
 
 package akka.stream.contrib
 
+import akka.Done
+import akka.stream.contrib.LatencyTimer.TimedResult
+import akka.stream.{Graph, SinkShape}
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
+
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 /**
@@ -53,6 +58,38 @@ object Implicits {
      */
     def timedIntervalBetween(matching: O ⇒ Boolean, onInterval: FiniteDuration ⇒ Unit): Flow[I, O, Mat] =
       Timed.timedIntervalBetween[I, O, Mat](flow, matching, onInterval)
+  }
+
+  /**
+   * Provides latency measurement utilities on Stream elements.
+   *
+   * See [[LatencyTimer]]
+   */
+  implicit class MeteredFlowDsl[I, O, Mat](val flow: Flow[I, O, Mat]) extends AnyVal {
+
+    /**
+     * Wraps a given flow and measures the time between input and output. The second parameter is the function which is called for each measured element.
+     * The [[TimedResult]] contains the result of the wrapped flow as well in case some logic has to be done.
+     *
+     * Important Note: the wrapped flow must preserve the order, otherwise timing will be wrong.
+     *
+     * @param resultFunction side-effect function which gets called with the result
+     * @return Flow of the the same shape as the wrapped flow
+     */
+    def measureLatency(resultFunction: TimedResult[O] ⇒ Unit): Flow[I, O, Mat] =
+      LatencyTimer(flow, resultFunction)
+
+    /**
+     * Wraps a given flow and measures the time between input and output. The measured result is pushed to a dedicated sink.
+     * The [[TimedResult]] contains the result of the wrapped flow as well in case some logic has to be done.
+     *
+     * Important Note: the wrapped flow must preserve the order, otherwise timing will be wrong.
+     *
+     * @param sink a sink which will handle the [[TimedResult]]
+     * @return Flow of the the same shape as the wrapped flow
+     */
+    def measureLatency(sink: Graph[SinkShape[TimedResult[O]], Future[Done]]): Flow[I, O, Mat] =
+      LatencyTimer(flow, sink)
   }
 
 }
