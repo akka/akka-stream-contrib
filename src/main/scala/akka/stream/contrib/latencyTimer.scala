@@ -95,8 +95,8 @@ private final case class TimerStartShape[InOut](in: Inlet[InOut],
                                                 out: Outlet[InOut],
                                                 outTimerContext: Outlet[TimerContext])
     extends Shape {
-  override val inlets: Seq[Inlet[_]] = in :: Nil
-  override val outlets: Seq[Outlet[_]] = out :: outTimerContext :: Nil
+  override val inlets: collection.immutable.Seq[Inlet[_]] = in :: Nil
+  override val outlets: collection.immutable.Seq[Outlet[_]] = out :: outTimerContext :: Nil
 
   override def deepCopy(): TimerStartShape[InOut] =
     TimerStartShape(in.carbonCopy(), out.carbonCopy(), outTimerContext.carbonCopy())
@@ -116,8 +116,8 @@ private final case class TimerEndShape[InOut](in: Inlet[InOut],
                                               out: Outlet[InOut],
                                               outTimedResult: Outlet[TimedResult[InOut]])
     extends Shape {
-  override val inlets: Seq[Inlet[_]] = in :: inTimerContext :: Nil
-  override val outlets: Seq[Outlet[_]] = out :: outTimedResult :: Nil
+  override val inlets: collection.immutable.Seq[Inlet[_]] = in :: inTimerContext :: Nil
+  override val outlets: collection.immutable.Seq[Outlet[_]] = out :: outTimedResult :: Nil
 
   override def deepCopy(): TimerEndShape[InOut] =
     TimerEndShape(in.carbonCopy(), inTimerContext.carbonCopy(), out.carbonCopy(), outTimedResult.carbonCopy())
