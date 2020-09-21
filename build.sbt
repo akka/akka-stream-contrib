@@ -12,7 +12,8 @@ libraryDependencies ++= Seq(
   "junit" % "junit" % "4.12" % Test, // Common Public License 1.0
   "com.novocode" % "junit-interface" % "0.11" % Test, // BSD-like
   "com.google.jimfs" % "jimfs" % "1.1" % Test, // ApacheV2
-  "org.scalatest" %% "scalatest" % "3.0.8" % Test, // ApacheV2
+  "org.scalatest" %% "scalatest" % "3.1.0" % Test, // ApacheV2
+  "org.scalamock" %% "scalamock" % "4.4.0" % Test, // ApacheV2
   "com.miguno.akka" %% "akka-mock-scheduler" % "0.5.5" % Test // ApacheV2
 )
 
