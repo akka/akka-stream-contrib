@@ -1,3 +1,4 @@
+version: ~> 1.0
 language: scala
 jdk: openjdk8
 
@@ -22,14 +23,6 @@ jobs:
       env: CMD=+test
       name: "Run tests for all Scala versions"
 
-    - stage: publish-212
-      env: CMD="++2.12.9! release"
-      name: "Publish artifacts for Scala 2.12 to Sonatype and release"
-
-    - stage: publish-213
-      env: CMD="++2.13.0! release"
-      name: "Publish artifacts for Scala 2.13 to Sonatype and release"
-
 stages:
   # runs on master commits and PRs
   - name: check
@@ -39,14 +32,6 @@ stages:
   - name: test
     if: NOT tag =~ ^v
   
-  # runs on main repo master commits or version-tagged commits
-  - name: publish-212
-    if: repo = akka/akka-stream-contrib AND ( ( branch = master AND type = push ) OR tag =~ ^v )
-
-  # runs on main repo master commits or version-tagged commits
-  - name: publish-213
-    if: repo = akka/akka-stream-contrib AND ( ( branch = master AND type = push ) OR tag =~ ^v )
-
 before_cache:
   - find $HOME/.ivy2 -name "ivydata-*.properties" -print -delete
   - find $HOME/.sbt  -name "*.lock"               -print -delete
@@ -55,13 +40,3 @@ cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot
-
-env:
-  global:
-    # travis encrypt SONATYPE_USERNAME=
-    - secure: "lpjYmsJ1oP9lzZ0+3DbpWO8SSgHpwSBu9caFcpks5tgXbHmEIjmC0ab3/rMyLbk2JtgWMHzIjEPt6OvhPsDN/QX08In8LGrVCb6h/J9yWN/w9njl0ex5NV+nLkwbemtV4CdP7egAe08fM4Nww6WOg6ZCVlnL4imkRt+IGbwZ9/nvBLtfmwFOD0ITZMfx3V+5rjW5Jl5JYVIr3KBmkD8OoNNop3nz141VYCTSYVMlfJmFGsyrFceN3vTo2uZmtckyVfj4ZXbqH6Pi4ik4TagCtvVSY7cR2v1loGXuNLT4nhPzwzbTcDkF5JOW1MGi4QssHMTvXGABgXsZkSjWXc/nV3bt9zfsO1KX0l4CTGgi6+jQVb5GXfaUUR7wV5nZDuUZTnKwhsrqXlN9smljIOWXyA8FZlrWPV7mhvSAd4tezKNou1/NsjiFqhMy5wDXtNFU0tHI4IBQb46L/nVOarWa3hiJ2S3BRCMKgXHt5KTD+5BnLY7OhxUUovcZCcLP0BOFwsHLS3ngNXQPLxnNbdwKySfR7ghljY3snV7yMUw8pn9CBiK6ltARIPfVrEtXNTJkm2N2EFplzuA522RfvP6SjENAZdFfjyQDE+X81fm6kWKVgVhl0MLcKO/ZFckaEDhRxYY0F8vyX3CELF7KQRFsmOCp4D1OfCqMT2i4dPE0stU="
-
-    # travis encrypt SONATYPE_PASSWORD=
-    - secure: "j2kLf/kAP2ZnXLJrYacXQD7xAuj401e6LdVU5UOy0NWPJS3pJVQaN1015is0ynyyOqlq4dSbc3TrQXvBWDpyIU4h01/Ck8Pf1dkczEUli8M2Ld6WABpHt4C99g2d1siXMNRUEXxh5WVmDOZAY3Cy3ZdtlGQWbmh1W9ZrGyl5KV+I2H3IPeqcrmNb2i7TgETVYTdWsROon8E3mJHSBs0EQ1IezL57aytQ2FlkbIHmGYy6M9ggMTIkh49p+cH+JO8rdjx+4amvyCZDmetG6n9gR5CWZVV7OI7FO9w2B+QHTi5auaXv78oHqo91jn+yHYS5tvUUJvwndpzai5AHTrFbtnFVlI6EVqt9OyPfF15N4aaxhixnjwGonHn4f7WPXVyb69zGtgqr4NK0bV5jX7R67SFus6lE5b1oy6r24jt+5r8AW0/VO4ycsaqaoaWfyOzPIARuVEcqKrntlIkPC1B7l8BPqEKQevY68+EaLfXWiGhbl/FGfGXKjvndOrbVJZ7maTvQXIETcWgIyqGpNFd58KTKaweV427l9x5IGNJwHwZ1HlaH9AEuOijwZkod5ofgICztRKKXubPsUlM0tjggMQmblauU3Nmhm4GTLNzFNMl8OeuDEvvCxSMo3/AQVMR/c6QzQNwCT+YIJBWwClOGPXHl4fkjJqtgajWio2WK6T4="
-    # travis encrypt PGP_PASS=
-    - secure: "epo/8IXrHj5CH7ceiUD5hKA5DCcICe32jlK4yCoEkrr+quAN4kdc/P3dyFXtTJEOiC7zmzBtpCDAwxklnYfhex0RttcWw00HiycyeFl7+HGMzQPPP5YxNsXKaXXxstoncjpSmqx/eVgqtrFpDWgppFwI65B9d2VPgDMTEMnIoJfvHHDSFEK2NmEcedRfYjYzD7UkhlyXtaVBWyzTnHCwLiSH07riOFf9km9a238t9qXQCaKL2NHKpDTxhKAd/Bd4WAxn+77EMgqRkPeCOgr/zrjyfPViTRjDA2BGXr08279bfxjzjURZvaGHaJqiOLvdhbhlGAv0sjcXXbUa86KUkoykQQiSM5PIjNk1TbgvcivhUAweAjW04HM7EtW4jpMpftQFiT59ru1+zwziDlHmvCOfgnNsKggIW1tl2ciC8rAWi2SqVKIxbcn0zcJpOml+lF4tCqzWfs95OqAozVRFtudAxZnIC6DGHVK4A6MssoH+jkaKxZ0CJeBggD8TAdgbRCJZlAYBmg0UEVRqPVlbt4Hpru6jr60x92Xb1Hop2KZPYr/h23mcvpcOJHAM7EfzPVXWq/83O4cKDvvyFkTJKjFVSVAV0LY0TYQdEJWdWe/2qbAHu0GAurARleehdV61PlsXGPL/PpMX889OoZvCXCTwKvGh13r4xKkUgLI3sTk="
