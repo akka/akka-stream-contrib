@@ -68,6 +68,7 @@ final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Eleme
 
     private var currentState: Option[Property] = None
     private var nbElements: Int = 0
+    private var downstreamWaiting = false
     private val buffer = Vector.newBuilder[Element]
 
     setHandlers(
@@ -88,10 +89,12 @@ final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Eleme
           }
         }
 
-        override def onPull(): Unit =
+        override def onPull(): Unit = {
+          downstreamWaiting = true
           if (!hasBeenPulled(in)) {
             pull(in)
           }
+        }
 
         override def onUpstreamFinish(): Unit = {
           val result = buffer.result()
@@ -104,7 +107,7 @@ final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Eleme
         private def stash(nextElement: Element) = {
           buffer += nextElement
           nbElements += 1
-          pull(in)
+          if (downstreamWaiting) pull(in)
         }
       }
     )
@@ -123,7 +126,10 @@ final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Eleme
       pushResults(None, None)
 
     private def pushResults(nextElement: Option[Element], nextState: Option[Property]): Unit = {
-      if (!isAvailable(out)) { return }
+      if (!isAvailable(out)) {
+        require(nextElement.isEmpty, s"pushResults: not available, would drop nextElement=$nextElement")
+        return
+      }
 
       val result = buffer.result()
       buffer.clear()
@@ -131,6 +137,7 @@ final class AccumulateWhileUnchanged[Element, Property](propertyExtractor: Eleme
 
       if (result.nonEmpty) {
         push(out, result)
+        downstreamWaiting = false
       }
 
       nextElement match {

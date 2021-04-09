@@ -107,6 +107,30 @@ class AccumulateWhileUnchangedSpec extends BaseStreamSpec {
         src.sendComplete()
         sink.expectComplete()
       }
+
+      "emit after maxDuration with long wait" in {
+        val (src, sink) = TestSource
+          .probe[Element]
+          .via(AccumulateWhileUnchanged(_.value, maxDuration = Some(100.millis)))
+          .toMat(TestSink.probe[Seq[Element]])(Keep.both)
+          .run()
+
+        // Pull/Push Ones without backpressure
+        sink.request(1)
+        SampleElements.Ones.foreach(src.sendNext)
+        sink.expectNext(SampleElements.Ones)
+
+        // Ask for more data, but wait long enough for the timer to expire before providing it
+        sink.request(1)
+        sink.expectNoMsg(200.millis)
+
+        // Elements made available together should be grouped together
+        SampleElements.Twos.foreach(src.sendNext)
+        sink.expectNext(SampleElements.Twos)
+
+        src.sendComplete()
+        sink.expectComplete()
+      }
     }
 
     "used with maxElements and maxDuration" should {
