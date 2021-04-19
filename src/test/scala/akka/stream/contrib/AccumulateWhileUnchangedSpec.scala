@@ -77,6 +77,84 @@ class AccumulateWhileUnchangedSpec extends BaseStreamSpec {
         src.sendComplete()
         sink.expectComplete()
       }
+
+      "emit after maxDuration with backpressure" in {
+        val (src, sink) = TestSource
+          .probe[Element]
+          .via(AccumulateWhileUnchanged(_.value, maxDuration = Some(100.millis)))
+          .toMat(TestSink.probe[Seq[Element]])(Keep.both)
+          .run()
+
+        // Pull/Push Ones without backpressure
+        sink.request(1)
+        SampleElements.Ones.foreach(src.sendNext)
+        sink.expectNext(SampleElements.Ones)
+
+        // Make more input data available without downstream demand for it
+        SampleElements.Twos.foreach(src.sendNext)
+        // Wait for longer than maxDuration so the timer expires and Twos are pushed
+        sink.expectNoMsg(200.millis)
+        SampleElements.Threes.foreach(src.sendNext)
+        // Wait for longer than maxDuration so the timer expires.
+        // Threes can't be pushed yet since there is no demand.
+        sink.expectNoMsg(200.millis)
+
+        // Verify all expected messages arrive at sink
+        sink.request(2)
+        sink.expectNext(SampleElements.Twos)
+        sink.expectNext(SampleElements.Threes)
+
+        src.sendComplete()
+        sink.expectComplete()
+      }
+
+      "emit after maxDuration with long wait" in {
+        val (src, sink) = TestSource
+          .probe[Element]
+          .via(AccumulateWhileUnchanged(_.value, maxDuration = Some(100.millis)))
+          .toMat(TestSink.probe[Seq[Element]])(Keep.both)
+          .run()
+
+        // Pull/Push Ones without backpressure
+        sink.request(1)
+        SampleElements.Ones.foreach(src.sendNext)
+        sink.expectNext(SampleElements.Ones)
+
+        // Ask for more data, but wait long enough for the timer to expire before providing it
+        sink.request(1)
+        sink.expectNoMsg(200.millis)
+
+        // Elements made available together should be grouped together
+        SampleElements.Twos.foreach(src.sendNext)
+        sink.expectNext(SampleElements.Twos)
+
+        src.sendComplete()
+        sink.expectComplete()
+      }
+    }
+
+    "used with maxElements and maxDuration" should {
+      "emit without dropping" in {
+        val (src, sink) = TestSource
+          .probe[Element]
+          .via(AccumulateWhileUnchanged(_.value, maxElements = Some(2), maxDuration = Some(500.millis)))
+          .toMat(TestSink.probe[Seq[Element]])(Keep.both)
+          .run()
+
+        SampleElements.Twos.foreach(src.sendNext)
+        sink.request(1)
+        sink.expectNext(SampleElements.Twos)
+
+        SampleElements.Ones.foreach(src.sendNext)
+        sink.request(1)
+        sink.expectNext(SampleElements.Ones.take(2))
+
+        // Complete should return last element of Ones immediately
+        src.sendComplete()
+        sink.request(1)
+        sink.expectNext(Seq(SampleElements.Ones(2)))
+        sink.expectComplete()
+      }
     }
   }
 }
