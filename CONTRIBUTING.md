@@ -6,7 +6,7 @@ In case of questions about the contribution process or for discussion of specifi
 
 * [Lightbend Contributor License Agreement](http://www.lightbend.com/contribute/cla)
 * [Issue Tracker](https://github.com/akka/akka-stream-contrib/issues)
-* [CI](https://travis-ci.org/akka/akka-stream-contrib)
+* [CI on GitHub actions](https://github.com/akka/akka-stream-contrib/actions)
 
 # Lightbend Project & Developer Guidelines
 
@@ -133,9 +133,5 @@ Example:
 ## How To Enforce These Guidelines?
 
 ### Make Use of Pull Request Validator
-akka-stream-contrib uses [Travis pull request builder](https://travis-ci.org/akka/akka-stream-contrib)
+akka-stream-contrib uses [GitHub actions](https://github.com/akka/akka-stream-contrib/actions)
 that automatically merges the code, builds it, runs the tests and comments on the Pull Request in GitHub.
-
-## Source style
-
-akka-stream-contrib uses [Scalariform](https://github.com/daniel-trinh/scalariform) to enforce some of the code style rules.
