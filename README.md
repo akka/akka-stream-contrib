@@ -1,10 +1,5 @@
-Akka Stream Contrib [![scaladex-badge][]][scaladex] [![travis-badge][]][travis]
+Akka Stream Contrib
 ===================
-
-[scaladex]:       https://index.scala-lang.org/akka/akka-stream-contrib
-[scaladex-badge]: https://index.scala-lang.org/akka/akka-stream-contrib/latest.svg
-[travis]:                https://travis-ci.com/github/akka/akka-stream-contrib
-[travis-badge]:          https://travis-ci.com/akka/akka-stream-contrib.svg?branch=master
 
 This project provides a home to Akka Streams add-ons which does not fit into the core Akka Streams module. There can be several reasons for it to not be included in the core module, such as:
 
