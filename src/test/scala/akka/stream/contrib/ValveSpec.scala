@@ -6,7 +6,7 @@ package akka.stream.contrib
 
 import akka.actor.ActorSystem
 import akka.pattern.after
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, StreamDetachedException}
 import akka.stream.contrib.SwitchMode.{Close, Open}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.testkit.scaladsl._
@@ -307,4 +307,23 @@ class ValveSpec extends WordSpec with ScalaFutures {
     }
 
   }
+
+  "A completed valve" should {
+
+    "fail to report its mode" in {
+
+      val (switchFut, terminatedFut) = Source.empty
+        .viaMat(new Valve(SwitchMode.Close))(Keep.right)
+        .toMat(Sink.ignore)(Keep.both)
+        .run()
+
+      whenReady(switchFut.zip(terminatedFut)) {
+        case (switch, _) =>
+          after(100 millis, system.scheduler) {
+            switch.getMode
+          }.failed.futureValue shouldBe a[StreamDetachedException]
+      }
+    }
+  }
+
 }
