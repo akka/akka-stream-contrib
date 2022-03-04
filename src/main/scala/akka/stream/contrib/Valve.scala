@@ -113,7 +113,6 @@ final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[F
           promise.success(succeed)
       }
 
-      // FIXME will never complete promise if stage is stopped, use invokeWithFeedback when Akka 2.5.7 is released
       val getModeCallback = getAsyncCallback[Promise[SwitchMode]](_.success(mode))
 
       override def flip(flipToMode: SwitchMode): Future[Boolean] = {
@@ -124,8 +123,10 @@ final class Valve[A](mode: SwitchMode) extends GraphStageWithMaterializedValue[F
 
       override def getMode(): Future[SwitchMode] = {
         val promise = Promise[SwitchMode]()
-        getModeCallback.invoke(promise)
-        promise.future
+        implicit val ec = materializer.executionContext
+        getModeCallback
+          .invokeWithFeedback(promise)
+          .flatMap(_ => promise.future)
       }
     }
 
