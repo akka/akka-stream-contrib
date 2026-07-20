@@ -28,5 +28,8 @@ jobs:
       - name: Cache Coursier cache
         uses: coursier/cache-action@v6.3
 
+      - name: Setup global resolver
+        uses: akka/github-actions-scripts/setup_global_resolver@main
+
       - name: "Code style, tests, documentation"
         run: sbt "scalafmtCheckAll; scalafmtSbtCheck; test; doc"
