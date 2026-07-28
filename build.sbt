@@ -6,7 +6,6 @@ scalaVersion := crossScalaVersions.value.head
 
 val AkkaVersion = "2.6.0"
 
-resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
